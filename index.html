@@ -242,6 +242,23 @@
 
   /* Profile / Help / Edit panels */
   .panel-card{background:rgba(18,16,10,.55); border:1px solid var(--line); border-radius:var(--radius); padding:26px 28px; max-width:520px;}
+
+  .social-cta{
+    display:flex; align-items:center; gap:20px; padding:30px 32px; max-width:560px;
+    border:1px solid var(--line); border-radius:var(--radius);
+    background:linear-gradient(135deg, rgba(212,175,55,.08), rgba(18,16,10,.6));
+    cursor:pointer; transition:border-color .18s ease, transform .12s ease, box-shadow .18s ease;
+  }
+  .social-cta:hover{border-color:var(--gold); transform:translateY(-2px); box-shadow:0 14px 34px -14px rgba(212,175,55,.35);}
+  .social-cta-icon{
+    width:64px; height:64px; border-radius:50%; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center;
+    background:#0a0806; border:1px solid rgba(212,175,55,.5);
+    box-shadow:0 0 22px -4px rgba(212,175,55,.4);
+  }
+  .social-cta-title{font-family:'Cormorant Garamond', serif; font-size:22px; font-weight:600; color:var(--text);}
+  .social-cta-sub{font-size:12.5px; color:var(--text-muted); margin-top:3px;}
+  .social-report-body b, .social-report-body strong{color:#050403; background:var(--gold-bright); padding:0 4px; border-radius:3px;}
   .panel-card .field{margin-bottom:16px;}
 
   .subtabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
@@ -365,6 +382,10 @@
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg>
           Yeni Aday (CV)
         </div>
+        <div class="nav-item" data-view="social">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11l18-7-7 18-3-8-8-3z"/></svg>
+          Sosyal Medya Paylaşım Yardımcısı
+        </div>
         <div id="who-box" style="margin-top:auto; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--text-muted);">
           Oturum: <b id="who" style="color:var(--text);"></b>
           <div><span class="role-badge" id="role-badge"></span></div>
@@ -437,6 +458,55 @@
             <div class="history" id="history-wrap" style="display:none;"><h3>Geçmiş Analizler</h3><div id="history-list"></div></div>
           </div>
 
+          <!-- SOCIAL MEDIA SHARE ASSISTANT VIEW -->
+          <div id="view-social" style="display:none;">
+            <div class="main-header">
+              <div><h2>Sosyal Medya Paylaşım Yardımcısı</h2><p>Facebook grupları için hazır ilan metni oluştur.</p></div>
+            </div>
+
+            <!-- AŞAMA 1: Paylaşım Oluştur ikonu -->
+            <div id="social-step-start">
+              <div class="social-cta" id="social-cta-btn">
+                <div class="social-cta-icon">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5"><path d="M3 11l18-7-7 18-3-8-8-3z"/></svg>
+                </div>
+                <div>
+                  <div class="social-cta-title">Paylaşım Oluştur</div>
+                  <div class="social-cta-sub">Bir client / pozisyon seç, Facebook için hazır ilan metni al</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AŞAMA 2: Client seçimi -->
+            <div id="social-step-pick" style="display:none;">
+              <label style="display:block; font-size:12px; color:var(--text-muted); margin:4px 0 8px;">Hangi pozisyon için ilan hazırlıyorsun? Maaş client dosyasından, konaklama ve ulaşım otomatik eklenir.</label>
+              <div class="client-picker" id="social-client-picker"></div>
+              <button class="btn btn-secondary" id="social-back-1" style="margin-top:14px;">&larr; Geri</button>
+            </div>
+
+            <div class="analyzing" id="social-analyzing" style="display:none; align-items:center; gap:12px; margin-top:20px; color:var(--gold-bright); font-size:13.5px;"><div class="spinner"></div> İlan metni hazırlanıyor…</div>
+            <div class="error-box" id="social-error"></div>
+
+            <!-- SONUÇ -->
+            <div id="social-result" style="display:none;">
+              <div class="main-header" style="margin-top:26px; margin-bottom:10px;">
+                <div><h3 style="margin:0; font-size:19px;">Facebook için hazır metin</h3></div>
+                <button class="btn btn-ghost" id="social-copy">Kopyala</button>
+              </div>
+              <div class="report" id="social-report" style="display:block;"></div>
+
+              <div class="main-header" style="margin-top:30px; margin-bottom:10px;">
+                <div><h3 style="margin:0; font-size:19px;">Facebook Gruplarında Paylaş</h3><p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Grupları seç — metin kopyalanır ve seçili grupların sayfaları yeni sekmelerde açılır.</p></div>
+                <button class="btn btn-ghost" id="open-add-group" style="display:none;">+ Grup Ekle</button>
+              </div>
+              <div class="client-picker" id="fb-group-picker" style="max-height:260px;"></div>
+              <div class="error-box" id="fb-share-error"></div>
+              <button class="btn btn-primary" style="width:auto; margin-top:14px;" id="fb-share-btn">Seçilenleri Paylaş</button>
+
+              <button class="btn btn-secondary" id="social-new" style="margin-top:26px; display:block;">+ Yeni paylaşım oluştur</button>
+            </div>
+          </div>
+
           <!-- PROFILE VIEW -->
           <div id="view-profile" style="display:none;">
             <div class="main-header"><div><h2>Profil</h2><p>Kişisel bilgilerinizi güncelleyin.</p></div></div>
@@ -493,6 +563,20 @@
       <div class="modal-actions">
         <button class="btn btn-secondary" id="m-cancel">Vazgeç</button>
         <button class="btn btn-primary" style="width:auto;" id="m-save">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD FACEBOOK GROUP MODAL -->
+  <div class="modal-backdrop" id="group-modal-backdrop">
+    <div class="modal">
+      <h3>Facebook Grubu Ekle</h3>
+      <div class="field"><label>Grup adı</label><input type="text" id="g-name" placeholder="örn. Hollanda İş İlanları"></div>
+      <div class="field"><label>Grup linki</label><input type="text" id="g-url" placeholder="https://facebook.com/groups/..."></div>
+      <div class="row2"><div class="field"><label>Üye sayısı (opsiyonel)</label><input type="text" id="g-members" placeholder="örn. 42.000"></div><div class="field"><label>Aktivite notu (opsiyonel)</label><input type="text" id="g-activity" placeholder="örn. günde ~15-20 ilan"></div></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="g-cancel">Vazgeç</button>
+        <button class="btn btn-primary" style="width:auto;" id="g-save">Kaydet</button>
       </div>
     </div>
   </div>
@@ -751,6 +835,7 @@ let clients = [];
 let activityLog = [];
 let chatMessages = [];
 let notifications = [];
+let fbGroups = [];
 let users = [];
 let currentUser = null; // {uid, username, name, surname, email, phone, role}
 
@@ -909,6 +994,7 @@ async function enterApp(profile){
   activityLog = await loadList('activityLog', []);
   chatMessages = await loadList('chatMessages', []);
   notifications = await loadList('notifications', []);
+  fbGroups = await loadList('fbGroups', []);
   lastSeenChatCount = chatMessages.length;
 
   document.getElementById('login-screen').style.display = 'none';
@@ -992,7 +1078,7 @@ document.getElementById('btn-logout').addEventListener('click', async ()=>{
 
 /* ============ TOP-RIGHT NAV ============ */
 function showMainView(id){
-  ['view-clients','view-cv','view-profile','view-help','view-edit'].forEach(v=>{
+  ['view-clients','view-cv','view-social','view-profile','view-help','view-edit'].forEach(v=>{
     document.getElementById(v).style.display = (v===id) ? 'block' : 'none';
   });
   document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
@@ -1022,7 +1108,8 @@ document.querySelectorAll('.nav-item').forEach(item=>{
     document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
     item.classList.add('active');
     const view = item.dataset.view;
-    showMainView(view === 'clients' ? 'view-clients' : 'view-cv');
+    const map = { clients:'view-clients', cv:'view-cv', social:'view-social' };
+    showMainView(map[view] || 'view-clients');
   });
 });
 
@@ -1199,6 +1286,210 @@ document.getElementById('m-save').addEventListener('click', async ()=>{
   renderClients();
   ['m-client','m-title','m-loc','m-hours','m-pay','m-notes'].forEach(id => document.getElementById(id).value = '');
   backdrop.classList.remove('open');
+});
+
+/* ============ SOSYAL MEDYA PAYLAŞIM YARDIMCISI ============ */
+let socialSelectedClient = null;
+const DEFAULT_ACCOMMODATION = 'Evet, şirket tarafından konaklama imkanı sağlanmaktadır.';
+const DEFAULT_TRANSPORT = 'Evet, işe geliş-gidiş için araç/ulaşım imkanı sağlanmaktadır.';
+
+function socialShowStep(step){
+  document.getElementById('social-step-start').style.display = step==='start' ? 'block' : 'none';
+  document.getElementById('social-step-pick').style.display = step==='pick' ? 'block' : 'none';
+  document.getElementById('social-result').style.display = step==='result' ? 'block' : 'none';
+  document.getElementById('social-error').style.display = 'none';
+}
+
+function renderSocialClientPicker(){
+  const box = document.getElementById('social-client-picker');
+  box.innerHTML = '';
+  clients.forEach((c,i)=>{
+    const row = document.createElement('div');
+    row.className = 'client-picker-item';
+    row.innerHTML = `<div class="cp-client">${c.client}</div><div class="cp-title">${c.title} — ${c.loc}</div>`;
+    row.addEventListener('click', ()=> generateSocialPost(c));
+    box.appendChild(row);
+  });
+}
+
+document.getElementById('social-cta-btn').addEventListener('click', ()=>{
+  renderSocialClientPicker();
+  socialShowStep('pick');
+});
+document.getElementById('social-back-1').addEventListener('click', ()=> socialShowStep('start'));
+document.getElementById('social-new').addEventListener('click', ()=> socialShowStep('start'));
+
+function socialMarkdownToHtml(md){
+  let html = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^\- (.*$)/gim, '&bull; $1')
+    .replace(/\n/g, '<br>');
+  return '<div class="social-report-body">' + html + '</div>';
+}
+
+const BOLD_MAP = {};
+(function(){
+  const upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ', lower='abcdefghijklmnopqrstuvwxyz', digits='0123456789';
+  const boldUpperStart = 0x1D5D4, boldLowerStart = 0x1D5EE, boldDigitStart = 0x1D7CE;
+  for(let i=0;i<26;i++){ BOLD_MAP[upper[i]] = String.fromCodePoint(boldUpperStart+i); BOLD_MAP[lower[i]] = String.fromCodePoint(boldLowerStart+i); }
+  for(let i=0;i<10;i++){ BOLD_MAP[digits[i]] = String.fromCodePoint(boldDigitStart+i); }
+})();
+function toUnicodeBold(text){
+  return text.split('').map(ch => BOLD_MAP[ch] || ch).join('');
+}
+function markdownToFacebookText(md){
+  return md.replace(/\*\*(.*?)\*\*/g, (m,inner) => toUnicodeBold(inner));
+}
+
+let lastGeneratedRaw = '';
+
+async function generateSocialPost(client){
+  socialSelectedClient = client;
+  socialShowStep('pick');
+  document.getElementById('social-analyzing').style.display = 'flex';
+  document.getElementById('social-error').style.display = 'none';
+  try{
+    const payload = {
+      client: client.client,
+      title: client.title,
+      loc: client.loc,
+      hours: client.hours,
+      pay: client.pay,
+      notes: client.notes,
+      salaryInfo: '',
+      accommodationInfo: DEFAULT_ACCOMMODATION,
+      transportInfo: DEFAULT_TRANSPORT
+    };
+    const response = await fetch('/api/generate-post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if(!response.ok) throw new Error(data.error || 'Sunucu hatası');
+    if(!data.text) throw new Error('Boş yanıt döndü.');
+    lastGeneratedRaw = data.text;
+    document.getElementById('social-report').innerHTML = socialMarkdownToHtml(data.text);
+    await logActivity('social_post', `${socialSelectedClient.client} — ${socialSelectedClient.title} için ilan metni oluşturuldu`);
+    renderFbGroupPicker();
+    socialShowStep('result');
+  }catch(e){
+    console.error(e);
+    const box = document.getElementById('social-error');
+    box.textContent = 'Metin oluşturulurken hata oluştu: ' + e.message;
+    box.style.display = 'block';
+  }finally{
+    document.getElementById('social-analyzing').style.display = 'none';
+  }
+}
+
+document.getElementById('social-copy').addEventListener('click', async ()=>{
+  const fbText = markdownToFacebookText(lastGeneratedRaw);
+  try{
+    await navigator.clipboard.writeText(fbText);
+    const btn = document.getElementById('social-copy');
+    const old = btn.textContent;
+    btn.textContent = 'Kopyalandı ✓';
+    setTimeout(()=> btn.textContent = old, 1800);
+  }catch(e){
+    alert('Kopyalama başarısız oldu, metni elle seçip kopyalayabilirsin.');
+  }
+});
+
+/* ============ FACEBOOK GRUPLARI ============ */
+async function saveFbGroups(){ await saveList('fbGroups', fbGroups); }
+
+function renderFbGroupPicker(){
+  document.getElementById('open-add-group').style.display = isYonetici() ? 'inline-block' : 'none';
+  const box = document.getElementById('fb-group-picker');
+  box.innerHTML = '';
+  if(!fbGroups.length){
+    box.innerHTML = `<div style="padding:16px; font-size:12.5px; color:var(--text-muted);">Henüz kayıtlı Facebook grubu yok. ${isYonetici() ? '"+ Grup Ekle" ile ekleyebilirsin.' : ''}</div>`;
+    return;
+  }
+  const parseMembers = (m) => {
+    if(!m) return -1;
+    const n = parseFloat(String(m).replace(/[.,]/g,'').replace(/[^\d]/g,''));
+    return isNaN(n) ? -1 : n;
+  };
+  const sorted = fbGroups.map((g,i)=>({...g, _idx:i})).sort((a,b)=> parseMembers(b.members) - parseMembers(a.members));
+  sorted.forEach((g)=>{
+    const row = document.createElement('div');
+    row.className = 'client-picker-item';
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.gap = '10px';
+    const metaBits = [];
+    if(g.members) metaBits.push(`👤 ${g.members} üye`);
+    if(g.activity) metaBits.push(g.activity);
+    const meta = metaBits.length ? metaBits.join(' &middot; ') : g.url;
+    row.innerHTML = `
+      <input type="checkbox" class="fb-group-check" data-idx="${g._idx}" style="width:15px; height:15px; accent-color:var(--gold); flex:0 0 auto;">
+      <div style="flex:1;">
+        <div class="cp-client">${g.name}</div>
+        <div class="cp-title">${meta}</div>
+      </div>
+      ${isYonetici() ? `<button class="btn-danger" data-delgroup="${g._idx}">Sil</button>` : ''}
+    `;
+    box.appendChild(row);
+  });
+  box.querySelectorAll('[data-delgroup]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const i = +btn.dataset.delgroup;
+      const removed = fbGroups[i];
+      if(!confirm(`"${removed.name}" grubu listeden silinsin mi?`)) return;
+      fbGroups.splice(i,1);
+      await saveFbGroups();
+      await logActivity('fb_group_delete', `${removed.name} silindi`);
+      renderFbGroupPicker();
+    });
+  });
+}
+
+const groupBackdrop = document.getElementById('group-modal-backdrop');
+document.getElementById('open-add-group').addEventListener('click', ()=> groupBackdrop.classList.add('open'));
+document.getElementById('g-cancel').addEventListener('click', ()=> groupBackdrop.classList.remove('open'));
+document.getElementById('g-save').addEventListener('click', async ()=>{
+  if(!isYonetici()) return;
+  const name = document.getElementById('g-name').value.trim();
+  const url = document.getElementById('g-url').value.trim();
+  const members = document.getElementById('g-members').value.trim();
+  const activity = document.getElementById('g-activity').value.trim();
+  if(!name || !url){ return; }
+  if(!/^https?:\/\//i.test(url)){ alert('Lütfen geçerli bir link girin (https:// ile başlamalı).'); return; }
+  fbGroups.push({name,url,members,activity});
+  await saveFbGroups();
+  await logActivity('fb_group_add', name);
+  renderFbGroupPicker();
+  document.getElementById('g-name').value = '';
+  document.getElementById('g-url').value = '';
+  document.getElementById('g-members').value = '';
+  document.getElementById('g-activity').value = '';
+  groupBackdrop.classList.remove('open');
+});
+
+document.getElementById('fb-share-btn').addEventListener('click', async ()=>{
+  const errBox = document.getElementById('fb-share-error');
+  errBox.style.display = 'none';
+  const checked = Array.from(document.querySelectorAll('.fb-group-check:checked'));
+  if(!checked.length){
+    errBox.textContent = 'Lütfen en az bir Facebook grubu seç.';
+    errBox.style.display = 'block';
+    return;
+  }
+  const fbText = markdownToFacebookText(lastGeneratedRaw);
+  try{ await navigator.clipboard.writeText(fbText); }catch(e){}
+
+  const selectedGroups = checked.map(cb => fbGroups[+cb.dataset.idx]);
+  selectedGroups.forEach(g => window.open(g.url, '_blank'));
+
+  await logActivity('fb_share', `${socialSelectedClient ? socialSelectedClient.client+' — '+socialSelectedClient.title : ''} metni ${selectedGroups.length} grup için kopyalandı ve sekmeler açıldı (${selectedGroups.map(g=>g.name).join(', ')})`);
+
+  const btn = document.getElementById('fb-share-btn');
+  const old = btn.textContent;
+  btn.textContent = 'Metin kopyalandı, sekmeler açıldı ✓';
+  setTimeout(()=> btn.textContent = old, 2600);
 });
 
 /* ============ CV ANALYSIS (kendi serverless fonksiyonumuz üzerinden) ============ */
