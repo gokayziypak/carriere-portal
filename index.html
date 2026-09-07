@@ -258,7 +258,8 @@
   }
   .social-cta-title{font-family:'Cormorant Garamond', serif; font-size:22px; font-weight:600; color:var(--text);}
   .social-cta-sub{font-size:12.5px; color:var(--text-muted); margin-top:3px;}
-  .social-report-body b, .social-report-body strong{color:#050403; background:var(--gold-bright); padding:0 4px; border-radius:3px;}
+  .social-report-body{font-family:'Space Grotesk', sans-serif; font-style:normal;}
+  .social-report-body b, .social-report-body strong{font-family:'Space Grotesk', sans-serif; font-style:normal; font-weight:600; color:#050403; background:var(--gold-bright); padding:1px 5px; border-radius:3px;}
   .panel-card .field{margin-bottom:16px;}
 
   .subtabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
@@ -1358,7 +1359,7 @@ function socialMarkdownToHtml(md){
 const BOLD_MAP = {};
 (function(){
   const upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ', lower='abcdefghijklmnopqrstuvwxyz', digits='0123456789';
-  const boldUpperStart = 0x1D5D4, boldLowerStart = 0x1D5EE, boldDigitStart = 0x1D7CE;
+  const boldUpperStart = 0x1D400, boldLowerStart = 0x1D41A, boldDigitStart = 0x1D7CE;
   for(let i=0;i<26;i++){ BOLD_MAP[upper[i]] = String.fromCodePoint(boldUpperStart+i); BOLD_MAP[lower[i]] = String.fromCodePoint(boldLowerStart+i); }
   for(let i=0;i<10;i++){ BOLD_MAP[digits[i]] = String.fromCodePoint(boldDigitStart+i); }
 })();
@@ -1371,12 +1372,32 @@ function markdownToFacebookText(md){
 
 let lastGeneratedRaw = '';
 
+function estimateMonthlyFromHourly(payStr, hoursStr){
+  if(!payStr || !/saat/i.test(payStr)) return null;
+  let weeklyHours = 40;
+  const rangeMatch = (hoursStr||'').match(/(\d{2,3})\s*-\s*(\d{2,3})\s*h\s*\/\s*hafta/i);
+  const singleMatch = (hoursStr||'').match(/(\d{2,3})\s*h\s*\/\s*hafta/i);
+  if(rangeMatch){ weeklyHours = (parseInt(rangeMatch[1]) + parseInt(rangeMatch[2])) / 2; }
+  else if(singleMatch){ weeklyHours = parseInt(singleMatch[1]); }
+  const monthlyHours = weeklyHours * 4;
+  const nums = [...payStr.matchAll(/€\s?(\d{1,3}),(\d{2})/g)].map(m => parseFloat(m[1]+'.'+m[2]));
+  if(!nums.length) return null;
+  const monthlyVals = nums.map(n => Math.round(n * monthlyHours));
+  const fmt = (n) => '€' + n.toLocaleString('nl-NL');
+  const text = monthlyVals.length === 1
+    ? `${fmt(monthlyVals[0])} brüt/ay (haftalık ${weeklyHours} saat, ${monthlyHours} saat/ay üzerinden ortalama)`
+    : `${fmt(Math.min(...monthlyVals))}–${fmt(Math.max(...monthlyVals))} brüt/ay (haftalık ${weeklyHours} saat, ${monthlyHours} saat/ay üzerinden ortalama)`;
+  return { weeklyHours, monthlyHours, text };
+}
+
 async function generateSocialPost(client){
   socialSelectedClient = client;
   socialShowStep('pick');
   document.getElementById('social-analyzing').style.display = 'flex';
   document.getElementById('social-error').style.display = 'none';
   try{
+    const monthlyEstimate = estimateMonthlyFromHourly(client.pay, client.hours);
+    const salaryInfo = monthlyEstimate ? `${client.pay} (~${monthlyEstimate.text})` : client.pay;
     const payload = {
       client: client.client,
       title: client.title,
@@ -1384,7 +1405,7 @@ async function generateSocialPost(client){
       hours: client.hours,
       pay: client.pay,
       notes: client.notes,
-      salaryInfo: '',
+      salaryInfo,
       accommodationInfo: DEFAULT_ACCOMMODATION,
       transportInfo: DEFAULT_TRANSPORT,
       knownErrors: getKnownErrorsFor('social_post')
@@ -1510,17 +1531,30 @@ document.getElementById('fb-share-btn').addEventListener('click', async ()=>{
     errBox.style.display = 'block';
     return;
   }
+
+  // Pencereleri HEMEN, senkron şekilde aç — tarayıcı pop-up engelleyicisi
+  // sadece tıklamayla doğrudan (araya await girmeden) açılan pencerelere izin verir.
+  const selectedGroups = checked.map(cb => fbGroups[+cb.dataset.idx]);
+  const blocked = [];
+  selectedGroups.forEach(g => {
+    const win = window.open(g.url, '_blank');
+    if(!win){ blocked.push(g); }
+  });
+
   const fbText = markdownToFacebookText(lastGeneratedRaw);
   try{ await navigator.clipboard.writeText(fbText); }catch(e){}
-
-  const selectedGroups = checked.map(cb => fbGroups[+cb.dataset.idx]);
-  selectedGroups.forEach(g => window.open(g.url, '_blank'));
 
   await logActivity('fb_share', `${socialSelectedClient ? socialSelectedClient.client+' — '+socialSelectedClient.title : ''} metni ${selectedGroups.length} grup için kopyalandı ve sekmeler açıldı (${selectedGroups.map(g=>g.name).join(', ')})`);
 
   const btn = document.getElementById('fb-share-btn');
   const old = btn.textContent;
-  btn.textContent = 'Metin kopyalandı, sekmeler açıldı ✓';
+  if(blocked.length){
+    errBox.innerHTML = `Metin kopyalandı, ancak tarayıcın ${blocked.length} pencereyi pop-up engelleyici yüzünden açamadı (${blocked.map(g=>g.name).join(', ')}). Adres çubuğunun sağındaki pop-up engelleyici simgesine tıklayıp bu site için pop-up'lara izin ver, sonra tekrar dene.`;
+    errBox.style.display = 'block';
+    btn.textContent = 'Metin kopyalandı, bazı sekmeler engellendi';
+  } else {
+    btn.textContent = 'Metin kopyalandı, sekmeler açıldı ✓';
+  }
   setTimeout(()=> btn.textContent = old, 2600);
 });
 
