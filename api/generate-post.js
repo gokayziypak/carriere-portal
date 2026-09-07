@@ -1,6 +1,45 @@
 // Vercel Serverless Function
-// Facebook grupları için iş ilanı paylaşım metni üretir.
+// Facebook grupları için iş ilanı paylaşım metni üretir (İNGİLİZCE çıktı).
 // Anthropic API anahtarı sadece burada, ortam değişkeni olarak kullanılır.
+//
+// 2 AŞAMALI DOĞRULAMA ZİNCİRİ:
+// Aşama 1 (Analist, Sonnet 5): İlk ilan metnini İngilizce üretir.
+// Aşama 2 (Critical, Opus 5): Farklı bir model olarak biçim kurallarına ve bilinen geçmiş
+// hatalara karşı denetler, gerekirse düzeltir.
+
+async function callClaude(apiKey, content, maxTokens, model) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: model || 'claude-sonnet-5',
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content }]
+    })
+  });
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Anthropic API hatası: ${errText}`);
+  }
+  const data = await response.json();
+  return (data.content || []).map(b => b.text || '').join('\n');
+}
+
+function parseStructured(raw) {
+  const out = {};
+  for (const f of ['HATA_VAR', 'HATA_ACIKLAMASI']) {
+    const re = new RegExp(f + '\\s*:\\s*(.*)', 'i');
+    const m = raw.match(re);
+    out[f] = m ? m[1].trim() : '';
+  }
+  const bodyMatch = raw.match(/METIN\s*:\s*([\s\S]*)$/i);
+  out.body = bodyMatch ? bodyMatch[1].trim() : raw.trim();
+  return out;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,67 +52,78 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { client, title, loc, hours, pay, notes, salaryInfo, accommodationInfo, transportInfo } = req.body;
+    const { client, title, loc, hours, pay, notes, salaryInfo, accommodationInfo, transportInfo, knownErrors } = req.body;
     if (!client || !title) {
       return res.status(400).json({ error: 'client ve title alanları zorunludur.' });
     }
 
-    const prompt = `Sen Carriere adlı işe alım ajansında çalışan, Facebook gruplarında iş ilanı paylaşan bir sosyal medya asistanısın. Aşağıdaki bilgilere göre, Facebook'ta bir iş ilanı grubuna paylaşılacak metni TÜRKÇE olarak hazırla.
+    const prompt = `You are a social media assistant working for a recruitment agency called Carriere, posting job openings in Facebook groups. Based on the information below, write the text for a Facebook job posting in ENGLISH.
 
-CLIENT / POZİSYON BİLGİLERİ (kayıtlı veritabanından):
-- Firma: ${client}
-- Pozisyon: ${title}
-- Lokasyon/Adres: ${loc}
-- Çalışma saatleri (kayıtlı): ${hours}
-- Maaş (kayıtlı referans): ${pay}
-- Notlar / gereksinimler (kayıtlı): ${notes}
+CLIENT / POSITION DATA (from our records):
+- Company: ${client}
+- Position: ${title}
+- Location/Address: ${loc}
+- Working hours (on record): ${hours}
+- Salary (reference, on record): ${pay}
+- Notes / requirements (on record): ${notes}
 
-BU İLANA ÖZEL DEĞİŞKEN BİLGİLER (kullanıcı girdi, metnin EN ÜSTÜNDE ve belirgin olmalı):
-- Maaş: ${salaryInfo || 'kayıtlı maaş bilgisini kullan'}
-- Kalacak yer / konaklama: ${accommodationInfo || 'belirtilmemiş, bu satırı atla'}
-- Ulaşım / araç: ${transportInfo || 'belirtilmemiş, bu satırı atla'}
+VARIABLE INFO SPECIFIC TO THIS POSTING (must appear at the very TOP of the text, prominently):
+- Salary: ${salaryInfo || 'use the salary on record'}
+- Accommodation: ${accommodationInfo || 'not specified, skip this line'}
+- Transport: ${transportInfo || 'not specified, skip this line'}
 
-BİÇİM VE İÇERİK KURALLARI:
-1. Facebook için ne çok uzun ne çok kısa bir metin yaz (yaklaşık 180-320 kelime).
-2. Metnin EN ÜSTÜNDE şu üç bilgi mutlaka, belirgin şekilde (madde başına ** ile kalın işaretli) yer alsın: Maaş, Kalacak yer, Ulaşım. Bu üstteki blok metnin en dikkat çeken kısmı olmalı.
-3. Bu bloğun hemen altında: Pozisyon adı - Firma adı - Adres tek satırda.
-4. Ardından "Çalışma Saatleri" başlığı altında: kaç vardiya (tek/2 vardiya), saat kaçtan kaça, haftalık/günlük kaç saat. Kayıtlı bilgiden yararlan, eksikse mantıklı ve gerçekçi bir varsayımla doldur ama uydurma spesifik sayı verme, genel ifade kullan (örn. "gündüz vardiyası" gibi).
-5. "Aranan Nitelikler" başlığı altında: kayıtlı notlardaki gereksinimleri madde madde yaz. Eksik bilgi varsa bu meslek grubu için genel kabul gören makul gereksinimleri kendin ekle (dil seviyesi, teknik beceri vb.), ama bunları da gerçekçi ve abartısız tut. Dil seviyesinden bahsederken "temel/orta/ileri seviye" gibi ifadeler KULLANMA, bunun yerine Avrupa Dil Portfolyosu seviyelerini kullan (örn. "İngilizce B1 seviyesi", "en az A2-B1 seviyesinde İngilizce" gibi A1, A2, B1, B2, C1, C2 ölçeğiyle ifade et).
-6. Aranan niteliklere MUTLAKA şu şartı ekle (atlamadan): "Tüm adayların AB vatandaşı olması VEYA geçerli bir Hollanda ikamet/çalışma izni sahibi olması gerekmektedir."
-7. "Firma Hakkında" kısa bir bölüm ekle: kayıtlı notlarda firma ile ilgili somut bilgi (kaç yıldır faaliyette, çalışan sayısı vb.) varsa onu kullan. YOKSA kesinlikle uydurma rakam/yıl verme; bunun yerine genel, gerçekçi ve tavsiye edici bir dille yaz (örn. "sektöründe köklü bir yapıya sahip", "profesyonel ve kurumsal bir çalışma ortamı sunuyor", "kariyerinde ilerlemek isteyenler için iyi bir fırsat" gibi ifadeler kullan, spesifik sayı uydurma).
-8. "Biz Neler Sunuyoruz?" başlığı altında madde madde tekrar özetle: çalışma saatleri/vardiya, ulaşım, konaklama, ve ayrıca kariyer ilerleme fırsatı olduğunu belirt. Konaklama ve ulaşım maddelerini SADECE "Kalacak yer imkanı" ve "Ulaşım desteği" gibi kısa başlıklar halinde yaz, yanına açıklayıcı ek cümle (örn. "konaklama şirket tarafından karşılanır" gibi) EKLEME — üstteki "Öne Çıkan Bilgiler" bloğunda zaten detaylı anlatıldı, burada tekrar detaylandırma.
-9. Metnin sonunda, iletişim bilgilerinden hemen önce motive edici bir kapanış cümlesi yaz (örn. "Bu fırsatı kaçırmak istemeyen, deneyimli ve motivasyonu yüksek adayları bekliyoruz! Hemen başvurun, size destek olalım.") ama bu cümlenin sonuna veya hiçbir yerine roket emojisi (🚀) veya başka bir emoji EKLEME, sade bitir.
-10. Metnin sonuna AYNEN şu iletişim bloğunu ekle (değiştirme):
-"📩 Daha fazla bilgi için:
-E-posta: g.ziypak@carriere.com
-Telefon: +31 615086484
-WhatsApp veya e-posta üzerinden bize ulaşabilirsiniz."
-11. Şu terimleri/ifadeleri geçtikleri her yerde ** ile kalın işaretle (Facebook'ta öne çıkması gereken önemli bilgiler): maaş rakamları, "kalacak yer"/konaklama ifadesi, "ulaşım"/araç ifadesi, çalışma saatleri/vardiya ifadeleri, ve varsa dil seviyesi (A1-C2) ifadeleri.
-12. Sade, sıcak, profesyonel bir dil kullan. Emoji kullanabilirsin ama abartma (başlıklarda 1 emoji yeterli, kapanış cümlesinde emoji kullanma).
-13. Markdown başlık (#) kullanma, sadece **kalın** ve satır başları/madde işaretleri (-) kullan, düz metin akışında kalsın çünkü Facebook markdown render etmez.`;
+FORMAT AND CONTENT RULES:
+1. Write a Facebook post that is neither too long nor too short (roughly 180-320 words).
+2. At the very TOP of the text, these three items MUST appear prominently (each bolded with **): Salary, Accommodation, Transport. This top block should be the most eye-catching part of the post.
+3. Right below that block: Position title - Company name - Address, on one line.
+4. Then, under a "Working Hours" heading: number of shifts (single/2-shift), what time to what time, weekly/daily hours. Use the data on record; if incomplete, fill in with a reasonable, realistic assumption but do not invent specific numbers — use a general phrase instead (e.g. "day shift").
+5. Under a "Requirements" heading: list the requirements from the notes on record as bullet points. If information is missing, add reasonable, generally accepted requirements for this profession yourself (language level, technical skills, etc.), but keep them realistic and not exaggerated. When mentioning language level, do NOT use "basic/intermediate/advanced" — use the CEFR scale instead (e.g. "English level B1", "at least A2-B1 level English", using A1, A2, B1, B2, C1, C2).
+6. ALWAYS include this requirement (never skip it): "All candidates must be EU citizens OR hold a valid Dutch residence/work permit."
+7. Add a short "About the Company" section: if the notes on record contain concrete facts about the company (years in business, number of employees, etc.), use them. If NOT, do NOT invent specific numbers or years under any circumstance; instead write in a general, realistic, encouraging tone (e.g. "an established and professional company in its sector", "offers a professional and corporate working environment", "a great opportunity for those looking to grow their career" — general phrases, no fabricated statistics).
+8. Under a "What We Offer" heading, summarize again as bullet points: working hours/shift, transport, accommodation, and also mention there is room for career growth. For the accommodation and transport bullets, use ONLY short labels like "Accommodation provided" and "Transport support provided" — do NOT add an explanatory extra sentence (e.g. "accommodation covered by the company") since this was already detailed in the top "Highlights" block; don't repeat the detail here.
+9. Near the end, right before the contact info, write one motivating closing sentence (e.g. "We're looking for motivated, experienced candidates who don't want to miss this opportunity! Apply now and let us support you.") but do NOT add a rocket emoji (🚀) or any other emoji to this sentence — keep it plain.
+10. At the very end, add EXACTLY this contact block (do not change it):
+"📩 For more information:
+Email: g.ziypak@carriere.com
+Phone: +31 615086484
+You can reach us via WhatsApp or email."
+11. Bold (**) every occurrence of these terms/phrases, since they should stand out on Facebook: salary figures, "accommodation" mentions, "transport" mentions, working hours/shift phrases, and language level (A1-C2) mentions.
+12. Use a simple, warm, professional tone. Emojis are fine but don't overdo it (1 emoji per heading is enough; no emoji in the closing sentence).
+13. Do not use markdown headings (#) — only **bold** and bullet points (-), keep it as plain flowing text since Facebook does not render markdown.`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-5',
-        max_tokens: 1600,
-        messages: [{ role: 'user', content: [{ type: 'text', text: prompt }] }]
-      })
-    });
+    // ---- AŞAMA 1: Analist (Sonnet 5) ----
+    const draft = await callClaude(apiKey, [{ type: 'text', text: prompt }], 1600, 'claude-sonnet-5');
 
-    if (!response.ok) {
-      const errText = await response.text();
-      return res.status(response.status).json({ error: `Anthropic API hatası: ${errText}` });
-    }
+    const knownErrorsText = (knownErrors && knownErrors.length)
+      ? knownErrors.map(e => `- Hata: ${e.hata} | Düzeltme: ${e.duzeltme}`).join('\n')
+      : 'Kayıtlı bilinen hata yok.';
 
-    const data = await response.json();
-    const text = (data.content || []).map(b => b.text || '').join('\n');
-    return res.status(200).json({ text });
+    // ---- AŞAMA 2: Critical (Opus 5 — farklı model, bağımsız denetim) ----
+    const criticInstruction = `Sen "Critical" adlı bağımsız bir denetim yapay zekasısın. Görevin, başka bir yapay zeka modelinin (Analist) ürettiği İngilizce Facebook ilan metnini kontrol etmek.
+
+DAHA ÖNCE TESPİT EDİLMİŞ BİLİNEN HATALAR (varsa bu cevapta tekrarlanmadığından emin ol, tekrarlanmışsa düzelt):
+${knownErrorsText}
+
+ANALİST'İN GÖREV TALİMATI ŞUYDU:
+${prompt}
+
+ANALİST'İN ÜRETTİĞİ CEVAP:
+${draft}
+
+Bu cevabı denetle: metin gerçekten İngilizce mi (Türkçe kelime/cümle sızmış mı), biçim kurallarına uyulmuş mu (kalın işaretleme, iletişim bloğu aynen kopyalanmış mı, AB vatandaşlığı/oturum izni şartı var mı, uydurma rakam/yıl var mı, emoji kuralına uyulmuş mu, CEFR seviyesi doğru kullanılmış mı). Sadece şu formatta cevap ver, başka hiçbir şey yazma:
+HATA_VAR: evet/hayır
+HATA_ACIKLAMASI: <bulduğun hatayı kısa ve net (Türkçe), ileride tekrar yapılmaması için tarif et; hata yoksa boş bırak>
+METIN:
+<hata yoksa Analist'in cevabını AYNEN (İngilizce olarak) tekrar yaz; hata varsa düzeltilmiş tam cevabı İngilizce olarak yaz>`;
+
+    const criticRaw = await callClaude(apiKey, [{ type: 'text', text: criticInstruction }], 1800, 'claude-opus-5');
+    const critic = parseStructured(criticRaw);
+
+    const errorFound = (critic.HATA_VAR || '').toLowerCase().startsWith('evet');
+    const errorDescription = critic.HATA_ACIKLAMASI || '';
+    const text = critic.body || draft;
+
+    return res.status(200).json({ text, pipeline: { errorFound, errorDescription } });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
