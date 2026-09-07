@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Carriere — Recruitment Atlas </title>
+<title>Carriere Service Center — Recruitment Ormi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- Firebase config: kendi Firebase projenin değerleriyle değiştir (README.md içindeki talimatlara bak) -->
@@ -44,21 +44,51 @@
   h1,h2,h3,.serif{font-family:'Cormorant Garamond', serif; letter-spacing:.01em;}
   a{color:var(--gold);}
   canvas#sky{position:fixed; inset:0; width:100%; height:100%; z-index:0; display:block;}
+  #intro-canvas{position:fixed; inset:0; width:100%; height:100%; z-index:500; display:none; transition:opacity .3s ease;}
+
+  #loading-scene{
+    position:fixed; inset:0; z-index:400; display:none;
+    background:radial-gradient(ellipse at 62% 45%, rgba(30,22,10,.97), rgba(4,3,2,.99) 70%);
+    flex-direction:column; align-items:center; justify-content:center;
+    opacity:0; transition:opacity .5s ease;
+  }
+  #loading-scene.visible{display:flex;}
+  #loading-scene.show{opacity:1;}
+  #loading-svg{width:min(88vw,780px); height:auto;}
+  .loading-caption{margin-top:-10px; text-align:center; width:min(88vw,420px);}
+  .loading-title{font-family:'Cormorant Garamond', serif; font-size:24px; color:var(--gold-bright); letter-spacing:.03em;}
+  .loading-sub{font-size:12.5px; color:var(--text-muted); margin-top:4px; min-height:16px;}
+  .loading-bar-track{margin-top:14px; height:4px; border-radius:4px; background:rgba(212,175,55,.15); overflow:hidden;}
+  .loading-bar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--gold-soft), var(--gold-bright)); box-shadow:0 0 10px rgba(245,217,160,.6); transition:width .25s linear;}
 
   .saturn{
-    position:fixed; top:6%; right:-70px; width:260px; height:260px; z-index:1;
-    opacity:.5; pointer-events:none;
-    filter:drop-shadow(0 0 50px rgba(212,175,55,.22));
+    position:fixed; top:4%; left:50%; width:560px; height:560px; z-index:1;
+    transform:translateX(-50%);
+    opacity:.42; pointer-events:none;
+    filter:drop-shadow(0 0 90px rgba(212,175,55,.28));
   }
-  .saturn .ring{
-    position:absolute; top:50%; left:50%; width:150%; height:34%;
-    border:9px solid rgba(212,175,55,.28); border-radius:50%;
+  .saturn .ring-tilt{
+    position:absolute; top:50%; left:50%; width:172%; height:38%;
     transform:translate(-50%,-50%) rotate(-16deg);
   }
+  .saturn .ring-spin{
+    position:absolute; inset:0; border-radius:50%;
+    border:10px solid rgba(245,217,160,.55);
+    box-shadow:0 0 40px rgba(212,175,55,.5), inset 0 0 30px rgba(212,175,55,.3);
+    animation:ringspin 22s linear infinite;
+  }
+  .saturn .ring-spin.outer{
+    inset:-22px; border-width:5px; border-color:rgba(212,175,55,.25);
+    box-shadow:0 0 30px rgba(212,175,55,.3);
+    animation:ringspin 34s linear infinite reverse;
+  }
+  @keyframes ringspin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
   .saturn .body{
     position:absolute; inset:0; border-radius:50%;
-    background:radial-gradient(circle at 34% 30%, #f3d998, #c79c3f 45%, #6d4f19 82%, #3b2b0d 100%);
-    box-shadow:inset -22px -14px 44px rgba(0,0,0,.55);
+    background:
+      radial-gradient(circle at 32% 28%, #fdf0c8 0%, #f3d998 16%, #dcb355 38%, #b8862f 60%, #7a5a1e 82%, #402e0e 100%),
+      repeating-linear-gradient(100deg, rgba(0,0,0,.06) 0px, rgba(0,0,0,.06) 5px, transparent 5px, transparent 14px);
+    box-shadow:inset -30px -18px 60px rgba(0,0,0,.55), inset 14px 10px 40px rgba(255,236,180,.25);
   }
 
   .veil{
@@ -80,7 +110,7 @@
     box-shadow:0 0 0 1px rgba(212,175,55,.06), 0 30px 80px -20px rgba(0,0,0,.8), 0 0 60px -15px rgba(212,175,55,.18);
   }
   .brand-mark{display:flex; align-items:center; gap:10px; margin-bottom:22px;}
-  .brand-mark span{font-size:13px; letter-spacing:.14em; color:var(--text-muted);}
+  .brand-mark span{font-size:11px; letter-spacing:.1em; color:var(--text-muted); line-height:1.4;}
   .login-card h1{font-size:30px; font-weight:600; margin:0 0 6px; color:var(--text);}
   .login-card p.lead{margin:0 0 24px; color:var(--text-muted); font-size:13.5px; line-height:1.5;}
   label{display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;}
@@ -232,6 +262,12 @@
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 8px 26px -6px rgba(0,0,0,.6), 0 0 22px -6px rgba(212,175,55,.4);
   }
+  .chat-badge{
+    position:absolute; top:-6px; right:-6px; font-size:17px; line-height:1;
+    display:none; filter:drop-shadow(0 0 6px rgba(245,217,160,.8));
+    animation:badgepulse 1.3s ease-in-out infinite;
+  }
+  @keyframes badgepulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.28);}}
   #chat-panel{
     position:fixed; bottom:92px; right:24px; z-index:80; width:320px; max-height:440px;
     background:linear-gradient(180deg, rgba(24,20,9,.96), rgba(8,7,3,.98));
@@ -264,8 +300,9 @@
 <body>
 
 <canvas id="sky"></canvas>
-<div class="saturn"><div class="ring"></div><div class="body"></div></div>
+<div class="saturn"><div class="ring-tilt"><div class="ring-spin outer"></div><div class="ring-spin"></div></div><div class="body"></div></div>
 <div class="veil"></div>
+<canvas id="intro-canvas"></canvas>
 
 <div class="stage">
 
@@ -274,12 +311,12 @@
     <div class="login-card">
       <div class="brand-mark">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg>
-        <span>CARRIERE</span>
+        <span>CARRIERE SERVICE CENTER — RECRUITMENT</span>
       </div>
 
       <!-- LOGIN FORM -->
       <div id="login-block">
-        <h1>Recruitment Atlas</h1>
+        <h1>Recruitment Ormi</h1>
         <p class="lead">Client haritasına ve aday analiz merkezine özel erişim.</p>
         <form id="login-form">
           <div class="field"><label for="user">E-posta</label><input type="email" id="user" autocomplete="off"></div>
@@ -392,11 +429,10 @@
             <div class="dropzone" id="dropzone">
               <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.4" style="margin:0 auto; display:block;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 11v6M9 14l3-3 3 3"/></svg>
               <h3>PDF CV'yi buraya bırak</h3>
-              <p>veya tıklayıp dosya seç &middot; sadece .pdf</p>
-              <input type="file" id="file-input" accept="application/pdf">
+              <p>veya tıklayıp dosya seç &middot; PDF, Word (.docx) veya PowerPoint (.pptx)</p>
+              <input type="file" id="file-input" accept=".pdf,.docx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation">
             </div>
-            <div class="analyzing" id="analyzing"><div class="spinner"></div> Aday değerlendiriliyor…</div>
-            <div class="error-box" id="error-box"></div>
+            <div class="error-box" id="error-box" style="margin-top:16px;"></div>
             <div class="report" id="report"></div>
             <div class="history" id="history-wrap" style="display:none;"><h3>Geçmiş Analizler</h3><div id="history-list"></div></div>
           </div>
@@ -476,9 +512,99 @@
 
 </div>
 
+<!-- CV ANALİZ YÜKLEME SAHNESİ -->
+<div id="loading-scene">
+  <svg id="loading-svg" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="hullGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#f5d9a0" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#f5d9a0" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="engineGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#ffe9b8" stop-opacity="0.95"/>
+        <stop offset="60%" stop-color="#d4af37" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#d4af37" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="hullBody" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#181409"/>
+        <stop offset="55%" stop-color="#0c0a05"/>
+        <stop offset="100%" stop-color="#050403"/>
+      </linearGradient>
+    </defs>
+
+    <g id="bg-dust"></g>
+
+    <!-- UZAY GEMİSİ -->
+    <g id="ship-group" transform="translate(560,220)">
+      <ellipse cx="0" cy="0" rx="150" ry="150" fill="url(#hullGlow)" opacity="0.12"/>
+      <ellipse id="engine-flare" cx="118" cy="6" rx="46" ry="20" fill="url(#engineGlow)"/>
+      <path d="M -150,0 C -150,-42 -70,-70 10,-70 C 90,-70 150,-30 150,0 C 150,30 90,66 10,66 C -70,66 -150,40 -150,0 Z"
+            fill="url(#hullBody)" stroke="#d4af37" stroke-width="2.5" opacity="0.98"/>
+      <path d="M -150,0 C -150,-42 -70,-70 10,-70 C 90,-70 150,-30 150,0"
+            fill="none" stroke="rgba(245,217,160,.55)" stroke-width="1.2"/>
+      <path d="M -40,-52 L 40,-58 L 20,-30 L -30,-28 Z" fill="#0a0806" stroke="#8a6a24" stroke-width="1.5"/>
+      <path d="M -40,52 L 40,58 L 20,30 L -30,28 Z" fill="#0a0806" stroke="#8a6a24" stroke-width="1.5"/>
+      <ellipse cx="-30" cy="0" rx="34" ry="26" fill="#0a0806" stroke="#d4af37" stroke-width="2"/>
+      <ellipse cx="-30" cy="0" rx="22" ry="16" fill="#f7e6b8" opacity="0.85"/>
+      <ellipse cx="-30" cy="0" rx="22" ry="16" fill="#f7e6b8" opacity="0.4">
+        <animate attributeName="opacity" values="0.85;0.35;0.85" dur="2.6s" repeatCount="indefinite"/>
+      </ellipse>
+      <g stroke="#8a6a24" stroke-width="1" opacity="0.6">
+        <line x1="-110" y1="-18" x2="60" y2="-30"/>
+        <line x1="-110" y1="18" x2="60" y2="30"/>
+        <line x1="-110" y1="0" x2="90" y2="0"/>
+      </g>
+      <circle cx="35" cy="-38" r="3" fill="#f5d9a0"><animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite"/></circle>
+      <circle cx="35" cy="38" r="3" fill="#f5d9a0"><animate attributeName="opacity" values="0.2;1;0.2" dur="1.4s" repeatCount="indefinite"/></circle>
+      <!-- hava kilidi / dock noktası -->
+      <g id="airlock" transform="translate(-118,-4)">
+        <rect x="-14" y="-16" width="28" height="32" rx="4" fill="#100c05" stroke="#f5d9a0" stroke-width="2"/>
+        <circle cx="0" cy="0" r="7" fill="none" stroke="#f5d9a0" stroke-width="2"/>
+        <circle id="airlock-light" cx="0" cy="-13" r="2.4" fill="#8fd0a0"/>
+      </g>
+    </g>
+
+    <!-- HALAT -->
+    <path id="tether" d="" fill="none" stroke="#d4af37" stroke-width="2" stroke-dasharray="1 7" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- ASTRONOT -->
+    <g id="astro-group" transform="translate(140,360)">
+      <ellipse cx="0" cy="26" rx="30" ry="10" fill="#000" opacity="0.15"/>
+      <!-- jetpack alev -->
+      <ellipse cx="-16" cy="10" rx="7" ry="12" fill="url(#engineGlow)" opacity="0.8"/>
+      <!-- backpack -->
+      <rect x="-14" y="-10" width="14" height="26" rx="4" fill="#100c05" stroke="#8a6a24" stroke-width="1.4"/>
+      <!-- gövde -->
+      <path d="M -8,-6 C -8,-22 24,-22 24,-6 L 22,20 C 22,28 -6,28 -8,20 Z" fill="#0e0b06" stroke="#f5d9a0" stroke-width="2"/>
+      <line x1="-2" y1="-4" x2="18" y2="-4" stroke="#d4af37" stroke-width="1.4" opacity="0.7"/>
+      <line x1="-3" y1="6" x2="19" y2="6" stroke="#d4af37" stroke-width="1.4" opacity="0.7"/>
+      <!-- kollar -->
+      <path d="M -6,-10 C -22,-6 -30,6 -34,18" fill="none" stroke="#0e0b06" stroke-width="9" stroke-linecap="round"/>
+      <path d="M -6,-10 C -22,-6 -30,6 -34,18" fill="none" stroke="#8a6a24" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M 22,-10 C 30,2 30,10 26,18" fill="none" stroke="#0e0b06" stroke-width="9" stroke-linecap="round"/>
+      <!-- bacaklar -->
+      <path d="M 0,20 C -2,32 -8,40 -10,50" fill="none" stroke="#0e0b06" stroke-width="10" stroke-linecap="round"/>
+      <path d="M 14,20 C 18,32 16,42 20,50" fill="none" stroke="#0e0b06" stroke-width="10" stroke-linecap="round"/>
+      <!-- kask -->
+      <circle cx="8" cy="-24" r="15" fill="#100c05" stroke="#f5d9a0" stroke-width="2.4"/>
+      <path d="M -1,-30 A 15 15 0 0 1 17,-24 A 15 15 0 0 1 6,-11" fill="#e9d19c" opacity="0.55"/>
+      <circle cx="6" cy="-27" r="3" fill="#fff8e6" opacity="0.85"/>
+      <!-- halat bağlantı noktası (bel) -->
+      <circle id="astro-anchor" cx="20" cy="18" r="2" fill="#f5d9a0"/>
+    </g>
+  </svg>
+
+  <div class="loading-caption">
+    <div class="loading-title">CV Analiz Ediliyor</div>
+    <div class="loading-sub" id="loading-sub">Aday, geminin veri bankasına aktarılıyor…</div>
+    <div class="loading-bar-track"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+  </div>
+</div>
+
 <!-- CHAT WIDGET -->
 <div id="chat-toggle">
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg>
+  <span id="chat-badge" class="chat-badge">☄️</span>
 </div>
 <div id="chat-panel">
   <div class="chat-head"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg> Carriere Ekip Sohbeti</div>
@@ -489,6 +615,8 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.0/mammoth.browser.min.js"></script>
 <script type="module">
 /* ============ FIREBASE SETUP ============ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
@@ -504,47 +632,97 @@ const app = initializeApp(window.FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ============ STARFIELD (aynı, değişmedi) ============ */
+/* ============ STARFIELD + METEORS + MOUSE SPARKLE TRAIL ============ */
 const canvas = document.getElementById('sky');
 const ctx = canvas.getContext('2d');
-let W, H, stars = [], shootingStars = [];
+let W, H, stars = [], shootingStars = [], sparkles = [];
 function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
 window.addEventListener('resize', resize); resize();
 function initStars(){
   stars = [];
-  const count = Math.floor((W*H)/9000);
+  const count = Math.floor((W*H)/4200);
   for(let i=0;i<count;i++){
-    stars.push({x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.3+0.3, baseAlpha:Math.random()*0.6+0.25, twinkleSpeed:Math.random()*0.02+0.005, phase:Math.random()*Math.PI*2, hue: Math.random()<0.35?'gold':'white'});
+    stars.push({
+      x:Math.random()*W, y:Math.random()*H,
+      r:Math.random()*1.7+0.4,
+      baseAlpha:Math.random()*0.55+0.4,
+      twinkleSpeed:Math.random()*0.02+0.005,
+      phase:Math.random()*Math.PI*2,
+      hue: Math.random()<0.4?'gold':'white'
+    });
   }
 }
 initStars(); window.addEventListener('resize', initStars);
+
+function spawnShootingStar(){
+  const startX = Math.random()*W*0.7 + W*0.1;
+  const startY = -20 - Math.random()*80;
+  const speed = 0.6 + Math.random()*0.9; // yavaş
+  shootingStars.push({
+    x:startX, y:startY,
+    vx: speed*(1.1+Math.random()*0.6), vy: speed*(0.8+Math.random()*0.5),
+    life:0, maxLife: 260 + Math.random()*260,
+    tailLen: 140 + Math.random()*90,
+    size: 1.4 + Math.random()*1.1
+  });
+}
 function maybeSpawnShootingStar(){
-  if(Math.random() < 0.012 && shootingStars.length < 3){
-    const startX = Math.random()*W*0.6 + W*0.2;
-    shootingStars.push({x:startX, y:-10, vx:4+Math.random()*3, vy:3+Math.random()*2, life:0, maxLife:60+Math.random()*20});
-  }
+  const target = 4 + Math.floor(Math.random()*2); // 4-5 eşzamanlı
+  if(shootingStars.length < target && Math.random() < 0.03){ spawnShootingStar(); }
 }
 function drawStar(s, alpha){
-  const color = s.hue==='gold' ? `rgba(212,175,55,${alpha})` : `rgba(243,236,217,${alpha})`;
+  const color = s.hue==='gold' ? `rgba(245,217,160,${alpha})` : `rgba(255,252,240,${alpha})`;
   ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+  if(s.r > 1.5){ ctx.beginPath(); ctx.arc(s.x, s.y, s.r*2.4, 0, Math.PI*2); ctx.fillStyle = s.hue==='gold' ? `rgba(245,217,160,${alpha*0.12})` : `rgba(255,252,240,${alpha*0.1})`; ctx.fill(); }
 }
+
+/* fare parıltı izi */
+let mouseX = -1000, mouseY = -1000;
+window.addEventListener('mousemove', (e)=>{
+  mouseX = e.clientX; mouseY = e.clientY;
+  if(Math.random() < 0.55){
+    sparkles.push({ x: mouseX + (Math.random()-0.5)*6, y: mouseY + (Math.random()-0.5)*6, life:0, maxLife: 26+Math.random()*14, r: 0.8+Math.random()*1.6 });
+  }
+});
+
 function tick(){
   ctx.clearRect(0,0,W,H);
   const g = ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#050403'); g.addColorStop(1,'#0e0a04');
+  g.addColorStop(0,'#0b0c16'); g.addColorStop(0.5,'#14100a'); g.addColorStop(1,'#1c150a');
   ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-  for(const s of stars){ s.phase += s.twinkleSpeed; const a = s.baseAlpha + Math.sin(s.phase)*0.25; drawStar(s, Math.max(0.1, Math.min(1,a))); }
+
+  for(const s of stars){ s.phase += s.twinkleSpeed; const a = s.baseAlpha + Math.sin(s.phase)*0.3; drawStar(s, Math.max(0.15, Math.min(1,a))); }
+
   maybeSpawnShootingStar();
   shootingStars = shootingStars.filter(m => m.life < m.maxLife);
   for(const m of shootingStars){
     m.life++; m.x += m.vx; m.y += m.vy;
-    const grad = ctx.createLinearGradient(m.x, m.y, m.x-m.vx*9, m.y-m.vy*9);
-    grad.addColorStop(0, 'rgba(245,217,160,0.95)'); grad.addColorStop(1, 'rgba(245,217,160,0)');
-    ctx.strokeStyle = grad; ctx.lineWidth = 1.8;
-    ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x-m.vx*9, m.y-m.vy*9); ctx.stroke();
+    const fadeIn = Math.min(1, m.life/18);
+    const fadeOut = Math.min(1, (m.maxLife-m.life)/40);
+    const alpha = Math.min(fadeIn, fadeOut);
+    const tx = m.x - (m.vx/Math.max(0.001,Math.hypot(m.vx,m.vy)))*m.tailLen;
+    const ty = m.y - (m.vy/Math.max(0.001,Math.hypot(m.vx,m.vy)))*m.tailLen;
+    const grad = ctx.createLinearGradient(m.x, m.y, tx, ty);
+    grad.addColorStop(0, `rgba(255,246,220,${0.95*alpha})`);
+    grad.addColorStop(0.25, `rgba(245,217,160,${0.6*alpha})`);
+    grad.addColorStop(1, 'rgba(245,217,160,0)');
+    ctx.strokeStyle = grad; ctx.lineWidth = m.size; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.beginPath(); ctx.arc(m.x, m.y, m.size*1.3, 0, Math.PI*2); ctx.fillStyle = `rgba(255,250,230,${alpha})`; ctx.fill();
   }
+  if(shootingStars.length < 4 && Math.random() < 0.02) spawnShootingStar();
+
+  sparkles = sparkles.filter(p => p.life < p.maxLife);
+  for(const p of sparkles){
+    p.life++;
+    const a = 1 - p.life/p.maxLife;
+    ctx.beginPath(); ctx.arc(p.x, p.y - p.life*0.35, p.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(245,217,160,${a*0.85})`; ctx.fill();
+  }
+
   requestAnimationFrame(tick);
 }
+for(let i=0;i<5;i++) spawnShootingStar();
 tick();
 
 function nowStr(){ return new Date().toLocaleString('tr-TR'); }
@@ -609,12 +787,113 @@ async function logActivity(type, detail){
   await saveList('activityLog', activityLog);
 }
 
+/* ============ SATÜRN'E YAKLAŞMA INTRO ANİMASYONU ============ */
+let pendingIntro = false;
+const introCanvas = document.getElementById('intro-canvas');
+const ictx = introCanvas.getContext('2d');
+function playSaturnIntro(onDone){
+  introCanvas.style.display = 'block';
+  introCanvas.style.opacity = '1';
+  const iw = introCanvas.width = window.innerWidth;
+  const ih = introCanvas.height = window.innerHeight;
+  const cx = iw/2, cy = ih*0.52;
+  const DUR = 3200;
+  const start = performance.now();
+  const introStars = [];
+  for(let i=0;i<220;i++){
+    const ang = Math.random()*Math.PI*2, dist = 40+Math.random()*Math.max(iw,ih)*0.75;
+    introStars.push({ang, dist, r:0.6+Math.random()*1.4, gold: Math.random()<0.4});
+  }
+  function ease(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+
+  function frame(now){
+    const raw = Math.min(1, (now-start)/DUR);
+    const p = ease(raw);
+    ictx.clearRect(0,0,iw,ih);
+    const bg = ictx.createRadialGradient(cx,cy,0,cx,cy,Math.max(iw,ih)*0.75);
+    bg.addColorStop(0, `rgba(20,15,8,1)`); bg.addColorStop(1, `rgba(4,3,2,1)`);
+    ictx.fillStyle = bg; ictx.fillRect(0,0,iw,ih);
+
+    // yıldızlar: yaklaştıkça büyüyüp parlaklaşıyor, dışa doğru kayıyor
+    for(const s of introStars){
+      const d = s.dist * (0.4 + p*2.6);
+      const x = cx + Math.cos(s.ang)*d, y = cy + Math.sin(s.ang)*d*0.7;
+      const size = s.r * (1+p*3.5);
+      const alpha = Math.min(1, 0.3+p*0.9);
+      if(x<-50||x>iw+50||y<-50||y>ih+50) continue;
+      ictx.beginPath(); ictx.arc(x,y,size,0,Math.PI*2);
+      ictx.fillStyle = s.gold ? `rgba(245,217,160,${alpha})` : `rgba(255,252,240,${alpha})`;
+      ictx.fill();
+    }
+
+    // halkalar: kameranın üstünden geçtiği hissi için hızla büyüyüp dışa taşıyor
+    const ringP = Math.min(1, p*1.35);
+    const ringA = ictx.createLinearGradient(0,cy,iw,cy);
+    ictx.save();
+    ictx.translate(cx,cy); ictx.rotate(-0.2);
+    for(let layer=0; layer<2; layer++){
+      const rx = (iw*0.55 + layer*40) * (0.5+ringP*1.8);
+      const ry = rx * 0.24;
+      ictx.beginPath();
+      ictx.ellipse(0,0,rx,ry,0,0,Math.PI*2);
+      ictx.strokeStyle = `rgba(245,217,160,${(0.5-layer*0.15)*(1-p*0.3)})`;
+      ictx.lineWidth = 10 - layer*4;
+      ictx.stroke();
+    }
+    ictx.restore();
+
+    // gezegen gövdesi: yaklaştıkça büyüyor, detaylı altın tonları
+    const planetR = 70 + p*p*Math.max(iw,ih)*0.62;
+    const grad = ictx.createRadialGradient(cx-planetR*0.28, cy-planetR*0.3, planetR*0.05, cx, cy, planetR);
+    grad.addColorStop(0,'#fdf3d2'); grad.addColorStop(0.18,'#f7e0a0');
+    grad.addColorStop(0.4,'#e0b563'); grad.addColorStop(0.65,'#b8862f');
+    grad.addColorStop(0.85,'#7a5a1e'); grad.addColorStop(1,'#2c2009');
+    ictx.beginPath(); ictx.arc(cx,cy,planetR,0,Math.PI*2); ictx.fillStyle = grad; ictx.fill();
+
+    // ışık hüzmeleri: gezegenden dışa doğru, halkalara ve yıldızlara yansıyan
+    ictx.save();
+    ictx.globalCompositeOperation = 'lighter';
+    for(let i=0;i<7;i++){
+      const ang = (i/7)*Math.PI*2 + p*1.2;
+      const len = planetR*1.6 + p*300;
+      const gx = cx + Math.cos(ang)*len, gy = cy + Math.sin(ang)*len*0.6;
+      const beam = ictx.createLinearGradient(cx,cy,gx,gy);
+      beam.addColorStop(0, `rgba(255,238,190,${0.18*p})`);
+      beam.addColorStop(1, 'rgba(255,238,190,0)');
+      ictx.strokeStyle = beam; ictx.lineWidth = 26;
+      ictx.beginPath(); ictx.moveTo(cx,cy); ictx.lineTo(gx,gy); ictx.stroke();
+    }
+    ictx.restore();
+
+    if(raw < 1){
+      requestAnimationFrame(frame);
+    } else {
+      // son parlama ve geçiş
+      let flash = 0;
+      function flashFrame(){
+        flash += 0.06;
+        introCanvas.style.opacity = String(Math.max(0, 1-flash));
+        if(flash < 1.05){ requestAnimationFrame(flashFrame); }
+        else { introCanvas.style.display = 'none'; onDone(); }
+      }
+      requestAnimationFrame(flashFrame);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
 /* ============ AUTH STATE ============ */
 onAuthStateChanged(auth, async (user) => {
   if(user){
     const profileSnap = await getDoc(doc(db,'users',user.uid));
     const profile = profileSnap.exists() ? profileSnap.data() : { username:user.email, name:'', surname:'', email:user.email, phone:'', role:'Üye' };
-    await enterApp({ uid:user.uid, ...profile, email: profile.email || user.email });
+    const fullProfile = { uid:user.uid, ...profile, email: profile.email || user.email };
+    if(pendingIntro){
+      pendingIntro = false;
+      playSaturnIntro(()=> enterApp(fullProfile));
+    } else {
+      await enterApp(fullProfile);
+    }
   } else {
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('app-screen').style.display = 'none';
@@ -630,6 +909,7 @@ async function enterApp(profile){
   activityLog = await loadList('activityLog', []);
   chatMessages = await loadList('chatMessages', []);
   notifications = await loadList('notifications', []);
+  lastSeenChatCount = chatMessages.length;
 
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
@@ -652,10 +932,12 @@ document.getElementById('login-form').addEventListener('submit', async function(
   const err = document.getElementById('login-error');
   err.style.display = 'none';
   try{
+    pendingIntro = true;
     await setPersistence(auth, document.getElementById('remember').checked ? browserLocalPersistence : browserSessionPersistence);
     await signInWithEmailAndPassword(auth, email, pw);
-    // onAuthStateChanged tetiklenip enterApp() çağıracak
+    // onAuthStateChanged tetiklenip intro + enterApp() çağıracak
   }catch(ex){
+    pendingIntro = false;
     err.textContent = 'E-posta veya şifre hatalı.';
     err.style.display = 'block';
   }
@@ -683,6 +965,7 @@ document.getElementById('register-form').addEventListener('submit', async functi
     err.textContent = 'Lütfen tüm alanları doldurun.'; err.style.display = 'block'; return;
   }
   try{
+    pendingIntro = true;
     const cred = await createUserWithEmailAndPassword(auth, email, pw);
     const profile = { username:uname, name, surname, email, phone:'', role:'Üye', createdAt: nowStr() };
     await setDoc(doc(db,'users',cred.user.uid), profile);
@@ -694,6 +977,7 @@ document.getElementById('register-form').addEventListener('submit', async functi
     // onAuthStateChanged otomatik enterApp() çağıracak; ardından log ekleyelim
     setTimeout(()=> logActivity('register', `${name} ${surname} (${uname}) kayıt oldu`), 800);
   }catch(ex){
+    pendingIntro = false;
     err.textContent = ex.code === 'auth/email-already-in-use' ? 'Bu e-posta zaten kayıtlı.' : 'Kayıt sırasında bir hata oluştu: ' + ex.message;
     err.style.display = 'block';
   }
@@ -969,6 +1253,46 @@ function fileToBase64(file){
     r.readAsDataURL(file);
   });
 }
+function fileToArrayBuffer(file){
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(r.result);
+    r.onerror = reject;
+    r.readAsArrayBuffer(file);
+  });
+}
+async function extractDocxText(file){
+  const buf = await fileToArrayBuffer(file);
+  const result = await mammoth.extractRawText({ arrayBuffer: buf });
+  return result.value;
+}
+async function extractPptxText(file){
+  const buf = await fileToArrayBuffer(file);
+  const zip = await JSZip.loadAsync(buf);
+  const slideFiles = Object.keys(zip.files)
+    .filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+    .sort((a,b)=> {
+      const na = parseInt(a.match(/slide(\d+)\.xml/)[1]);
+      const nb = parseInt(b.match(/slide(\d+)\.xml/)[1]);
+      return na - nb;
+    });
+  let text = '';
+  for(const name of slideFiles){
+    const xml = await zip.files[name].async('text');
+    const matches = xml.match(/<a:t>([^<]*)<\/a:t>/g) || [];
+    const slideText = matches.map(m => m.replace(/<a:t>|<\/a:t>/g,'')).join(' ');
+    text += slideText + '\n';
+  }
+  return text;
+}
+function detectKind(file){
+  const name = file.name.toLowerCase();
+  if(name.endsWith('.pdf') || file.type === 'application/pdf') return 'pdf';
+  if(name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'docx';
+  if(name.endsWith('.pptx') || file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') return 'pptx';
+  if(name.endsWith('.doc') || name.endsWith('.ppt')) return 'legacy';
+  return 'unsupported';
+}
 
 const FORMAT_RULE = `BİÇİM KURALI: Kısa ve öz yaz, gereksiz uzatma. Markdown TABLO kullanma (| işaretli satırlar yasak). "- " ile başlayan madde işaretli listeler kullan, önemli terimleri **kalın** yaz. Tüm çıktı TÜRKÇE. CV'de belirtilmeyen bilgi için "CV'de belirtilmemiş" yaz, tahmin yürütme.`;
 const CONTACT_RULE = `Her cevabın en başında ## İletişim Bilgileri başlığı altında CV'den bulduğun e-posta, telefon ve adres bilgilerini madde madde ver.`;
@@ -1044,8 +1368,116 @@ function simpleMarkdownToHtml(md){
   html = html.replace(/(<li>.*?<\/li>)/gs, m => '<ul>' + m + '</ul>').replace(/<\/ul>\s*<ul>/g, '');
   return '<p>' + html + '</p>';
 }
+
+/* ============ YÜKLEME SAHNESİ: UZAY GEMİSİ + ASTRONOT ============ */
+let loadingRAF = null;
+let loadingProgress = 0;
+let loadingActive = false;
+let loadingMsgTimer = null;
+let dustPopulated = false;
+
+function populateDust(){
+  if(dustPopulated) return;
+  dustPopulated = true;
+  const g = document.getElementById('bg-dust');
+  let html = '';
+  for(let i=0;i<50;i++){
+    const x = Math.random()*800, y = Math.random()*500, r = Math.random()*1.4+0.3;
+    const gold = Math.random()<0.4;
+    html += `<circle cx="${x}" cy="${y}" r="${r}" fill="${gold?'#f5d9a0':'#fff8e6'}" opacity="${0.25+Math.random()*0.5}"/>`;
+  }
+  g.innerHTML = html;
+}
+
+function shipAirlockWorld(){ return {x:442, y:216}; }
+function astroAnchorWorld(ax,ay){ return {x:ax+20, y:ay+18}; }
+
+function updateLoadingVisual(p){
+  const startX=140, startY=360, endX=462, endY=226;
+  const ep = 1 - Math.pow(1-p, 2);
+  const bob = Math.sin(p*14) * (10*(1-p));
+  const ax = startX + (endX-startX)*ep;
+  const ay = startY + (endY-startY)*ep + bob;
+  const rot = -8 + 14*p;
+  const astro = document.getElementById('astro-group');
+  if(astro) astro.setAttribute('transform', `translate(${ax},${ay}) rotate(${rot})`);
+
+  const anchor = astroAnchorWorld(ax,ay);
+  const dock = shipAirlockWorld();
+  const dx = dock.x-anchor.x, dy = dock.y-anchor.y;
+  const dist = Math.hypot(dx,dy);
+  const midx = (anchor.x+dock.x)/2, midy = (anchor.y+dock.y)/2;
+  const sag = Math.min(60, dist*0.35) * (1-p*0.7);
+  const nx = -dy/Math.max(1,dist), ny = dx/Math.max(1,dist);
+  const ctrlX = midx + nx*sag, ctrlY = midy + ny*sag + sag*0.4;
+  const tether = document.getElementById('tether');
+  if(tether) tether.setAttribute('d', `M ${anchor.x},${anchor.y} Q ${ctrlX},${ctrlY} ${dock.x},${dock.y}`);
+
+  const bar = document.getElementById('loading-bar-fill');
+  if(bar) bar.style.width = (p*100)+'%';
+}
+
+const LOADING_MESSAGES = [
+  'Aday, geminin veri bankasına aktarılıyor…',
+  'Sertifikalar ve deneyimler taranıyor…',
+  'Client gereksinimleriyle karşılaştırılıyor…',
+  'Uygunluk hesaplanıyor…',
+  'Rapor hazırlanıyor…'
+];
+
+function startLoadingScene(){
+  populateDust();
+  const scene = document.getElementById('loading-scene');
+  scene.classList.add('visible');
+  requestAnimationFrame(()=> scene.classList.add('show'));
+  loadingActive = true;
+  loadingProgress = 0;
+  updateLoadingVisual(0);
+  let msgIdx = 0;
+  document.getElementById('loading-sub').textContent = LOADING_MESSAGES[0];
+  clearInterval(loadingMsgTimer);
+  loadingMsgTimer = setInterval(()=>{
+    msgIdx = (msgIdx+1) % LOADING_MESSAGES.length;
+    document.getElementById('loading-sub').textContent = LOADING_MESSAGES[msgIdx];
+  }, 2200);
+  function loop(){
+    if(!loadingActive) return;
+    loadingProgress += (0.9 - loadingProgress) * 0.012;
+    updateLoadingVisual(Math.min(0.9, loadingProgress));
+    loadingRAF = requestAnimationFrame(loop);
+  }
+  loadingRAF = requestAnimationFrame(loop);
+}
+
+function finishLoadingScene(){
+  return new Promise((resolve)=>{
+    loadingActive = false;
+    if(loadingRAF) cancelAnimationFrame(loadingRAF);
+    clearInterval(loadingMsgTimer);
+    document.getElementById('loading-sub').textContent = 'Astronot gemiye ulaştı, veriler indiriliyor…';
+    const startP = loadingProgress;
+    const t0 = performance.now();
+    const DUR = 700;
+    function snap(now){
+      const t = Math.min(1, (now-t0)/DUR);
+      const p = startP + (1-startP)*t;
+      updateLoadingVisual(p);
+      if(t<1){ requestAnimationFrame(snap); }
+      else {
+        setTimeout(()=>{
+          const scene = document.getElementById('loading-scene');
+          scene.classList.remove('show');
+          setTimeout(()=>{ scene.classList.remove('visible'); resolve(); }, 500);
+        }, 350);
+      }
+    }
+    requestAnimationFrame(snap);
+  });
+}
 async function handleFile(file){
-  if(file.type !== 'application/pdf'){ showError('Sadece PDF dosyaları desteklenir.'); return; }
+  const kind = detectKind(file);
+  if(kind === 'unsupported'){ showError('Desteklenmeyen dosya türü. PDF, .docx veya .pptx yükleyin.'); return; }
+  if(kind === 'legacy'){ showError('Eski .doc / .ppt formatları desteklenmiyor. Lütfen .docx / .pptx veya PDF olarak kaydedip tekrar deneyin.'); return; }
   const mode = modeScan.checked ? 'scan' : (modeSpecific.checked ? 'specific' : null);
   if(!mode){
     showError('Lütfen önce yukarıdaki iki seçenekten birini işaretleyin.');
@@ -1057,26 +1489,36 @@ async function handleFile(file){
   }
   document.getElementById('error-box').style.display = 'none';
   document.getElementById('report').style.display = 'none';
-  document.getElementById('analyzing').style.display = 'flex';
+  startLoadingScene();
   try{
-    const base64 = await fileToBase64(file);
-    const response = await fetch("/api/analyze-cv", {
+    let payload;
+    if(kind === 'pdf'){
+      const base64 = await fileToBase64(file);
+      payload = { fileBase64: base64, prompt: buildPrompt(mode) };
+    } else {
+      const extracted = kind === 'docx' ? await extractDocxText(file) : await extractPptxText(file);
+      if(!extracted || !extracted.trim()) throw new Error('Dosyadan metin çıkarılamadı, dosya boş olabilir.');
+      payload = { cvText: extracted, prompt: buildPrompt(mode) };
+    }
+    const fetchPromise = fetch("/api/analyze-cv", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fileBase64: base64, prompt: buildPrompt(mode) })
+      body: JSON.stringify(payload)
     });
+    const response = await fetchPromise;
     const data = await response.json();
     if(!response.ok) throw new Error(data.error || 'Sunucu hatası');
     const text = data.text;
     if(!text) throw new Error('Boş yanıt döndü.');
+    await finishLoadingScene();
     document.getElementById('report').innerHTML = simpleMarkdownToHtml(text);
     document.getElementById('report').style.display = 'block';
     await logActivity('cv_upload', `${file.name} yüklendi (${mode}) ve analiz edildi`);
   }catch(e){
     console.error(e);
+    await finishLoadingScene();
     showError('Analiz sırasında bir hata oluştu: ' + e.message);
   }finally{
-    document.getElementById('analyzing').style.display = 'none';
     fileInput.value = '';
   }
 }
@@ -1086,16 +1528,28 @@ function showError(msg){ const box = document.getElementById('error-box'); box.t
 /* ============ CHAT WIDGET ============ */
 const chatToggle = document.getElementById('chat-toggle');
 const chatPanel = document.getElementById('chat-panel');
+const chatBadge = document.getElementById('chat-badge');
 let chatPollTimer = null;
+let lastSeenChatCount = 0;
 chatToggle.addEventListener('click', ()=>{
   chatPanel.classList.toggle('open');
   if(chatPanel.classList.contains('open')){
+    chatBadge.style.display = 'none';
     renderChat();
-    chatPollTimer = setInterval(async ()=>{ chatMessages = await loadList('chatMessages', chatMessages); renderChat(); }, 4000);
+    lastSeenChatCount = chatMessages.length;
+    chatPollTimer = setInterval(async ()=>{ chatMessages = await loadList('chatMessages', chatMessages); lastSeenChatCount = chatMessages.length; renderChat(); }, 4000);
   } else {
     clearInterval(chatPollTimer);
   }
 });
+setInterval(async ()=>{
+  if(!currentUser || chatPanel.classList.contains('open')) return;
+  const fresh = await loadList('chatMessages', chatMessages);
+  if(fresh.length > lastSeenChatCount){
+    chatMessages = fresh;
+    chatBadge.style.display = 'block';
+  }
+}, 9000);
 function renderChat(){
   const wrap = document.getElementById('chat-messages');
   wrap.innerHTML = '';
