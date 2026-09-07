@@ -174,6 +174,10 @@
   .btn-secondary{background:transparent; color:var(--text-muted); border:1px solid var(--line);}
   .btn-secondary:hover{color:var(--text); border-color:var(--gold);}
   .btn-danger{background:transparent; color:var(--danger); border:1px solid rgba(224,120,90,.4); font-size:12px; padding:6px 10px;}
+  .btn-pending{background:transparent; color:var(--text-muted); border:1px solid var(--line); font-size:12px; padding:6px 10px; border-radius:8px; cursor:pointer; font-weight:700; width:30px; flex:0 0 auto;}
+  .btn-pending:hover{border-color:var(--danger); color:var(--danger);}
+  .btn-pending.active{background:rgba(224,120,90,.15); color:var(--danger); border-color:var(--danger);}
+  .pending-badge{display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:var(--danger); color:#fff; font-size:11px; font-weight:700; cursor:help; vertical-align:middle;}
   .btn-danger:hover{background:rgba(224,120,90,.1);}
 
   /* client list */
@@ -498,8 +502,12 @@
 
               <div class="main-header" style="margin-top:30px; margin-bottom:10px;">
                 <div><h3 style="margin:0; font-size:19px;">Facebook Gruplarında Paylaş</h3><p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Grupları seç — metin kopyalanır ve seçili grupların sayfaları yeni sekmelerde açılır.</p></div>
-                <button class="btn btn-ghost" id="open-add-group" style="display:none;">+ Grup Ekle</button>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-ghost" id="open-add-group" style="display:none;">+ Grup Ekle</button>
+                  <button class="btn btn-ghost" id="open-fb-logs" style="display:none;">Logs</button>
+                </div>
               </div>
+              <div id="fb-logs-panel" style="display:none; margin-bottom:16px;"></div>
               <div class="client-picker" id="fb-group-picker" style="max-height:260px;"></div>
               <div class="error-box" id="fb-share-error"></div>
               <button class="btn btn-primary" style="width:auto; margin-top:14px;" id="fb-share-btn">Seçilenleri Paylaş</button>
@@ -573,7 +581,7 @@
   <!-- ADD FACEBOOK GROUP MODAL -->
   <div class="modal-backdrop" id="group-modal-backdrop">
     <div class="modal">
-      <h3>Facebook Grubu Ekle</h3>
+      <h3 id="group-modal-title">Facebook Grubu Ekle</h3>
       <div class="field"><label>Grup adı</label><input type="text" id="g-name" placeholder="örn. Hollanda İş İlanları"></div>
       <div class="field"><label>Grup linki</label><input type="text" id="g-url" placeholder="https://facebook.com/groups/..."></div>
       <div class="row2"><div class="field"><label>Üye sayısı (opsiyonel)</label><input type="text" id="g-members" placeholder="örn. 42.000"></div><div class="field"><label>Aktivite notu (opsiyonel)</label><input type="text" id="g-activity" placeholder="örn. günde ~15-20 ilan"></div></div>
@@ -1014,6 +1022,7 @@ async function enterApp(profile){
   chatMessages = await loadList('chatMessages', []);
   notifications = await loadList('notifications', []);
   fbGroups = await loadList('fbGroups', []);
+  shareLogs = await loadList('shareLogs', []);
   criticalErrors = await loadList('criticalErrors', []);
   lastSeenChatCount = chatMessages.length;
 
@@ -1454,6 +1463,7 @@ async function saveFbGroups(){ await saveList('fbGroups', fbGroups); }
 
 function renderFbGroupPicker(){
   document.getElementById('open-add-group').style.display = isYonetici() ? 'inline-block' : 'none';
+  document.getElementById('open-fb-logs').style.display = isYonetici() ? 'inline-block' : 'none';
   const box = document.getElementById('fb-group-picker');
   box.innerHTML = '';
   if(!fbGroups.length){
@@ -1472,19 +1482,41 @@ function renderFbGroupPicker(){
     row.style.display = 'flex';
     row.style.alignItems = 'center';
     row.style.gap = '10px';
+    if(g.pendingApproval){ row.style.borderLeft = '3px solid var(--danger)'; }
     const metaBits = [];
     if(g.members) metaBits.push(`👤 ${g.members} üye`);
     if(g.activity) metaBits.push(g.activity);
     const meta = metaBits.length ? metaBits.join(' &middot; ') : g.url;
+    const pendingBadge = g.pendingApproval
+      ? `<span class="pending-badge" title="Gönderi onay aşamasında — bu grupta paylaşımlar yönetici onayı bekliyor, henüz yayınlanmamış olabilir.">!</span>`
+      : '';
     row.innerHTML = `
       <input type="checkbox" class="fb-group-check" data-idx="${g._idx}" style="width:15px; height:15px; accent-color:var(--gold); flex:0 0 auto;">
       <div style="flex:1;">
-        <div class="cp-client">${g.name}</div>
+        <div class="cp-client">${g.name} ${pendingBadge}</div>
         <div class="cp-title">${meta}</div>
       </div>
+      <button class="btn-pending${g.pendingApproval ? ' active' : ''}" data-pending="${g._idx}" title="Onay bekliyor olarak işaretle/kaldır">!</button>
+      ${isYonetici() ? `<button class="btn-secondary" style="font-size:12px; padding:6px 10px;" data-editgroup="${g._idx}">Düzenle</button>` : ''}
       ${isYonetici() ? `<button class="btn-danger" data-delgroup="${g._idx}">Sil</button>` : ''}
     `;
     box.appendChild(row);
+  });
+  box.querySelectorAll('[data-pending]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const i = +btn.dataset.pending;
+      fbGroups[i].pendingApproval = !fbGroups[i].pendingApproval;
+      await saveFbGroups();
+      await logActivity('fb_group_pending', `${fbGroups[i].name} — onay durumu: ${fbGroups[i].pendingApproval ? 'onay bekliyor' : 'temizlendi'}`);
+      renderFbGroupPicker();
+    });
+  });
+  box.querySelectorAll('[data-editgroup]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openGroupModal(+btn.dataset.editgroup);
+    });
   });
   box.querySelectorAll('[data-delgroup]').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
@@ -1500,8 +1532,22 @@ function renderFbGroupPicker(){
   });
 }
 
+let editingGroupIdx = null;
 const groupBackdrop = document.getElementById('group-modal-backdrop');
-document.getElementById('open-add-group').addEventListener('click', ()=> groupBackdrop.classList.add('open'));
+
+function openGroupModal(idx){
+  editingGroupIdx = (idx === undefined || idx === null) ? null : idx;
+  const isEdit = editingGroupIdx !== null;
+  document.getElementById('group-modal-title').textContent = isEdit ? 'Facebook Grubunu Düzenle' : 'Facebook Grubu Ekle';
+  const g = isEdit ? fbGroups[editingGroupIdx] : { name:'', url:'', members:'', activity:'' };
+  document.getElementById('g-name').value = g.name || '';
+  document.getElementById('g-url').value = g.url || '';
+  document.getElementById('g-members').value = g.members || '';
+  document.getElementById('g-activity').value = g.activity || '';
+  groupBackdrop.classList.add('open');
+}
+
+document.getElementById('open-add-group').addEventListener('click', ()=> openGroupModal(null));
 document.getElementById('g-cancel').addEventListener('click', ()=> groupBackdrop.classList.remove('open'));
 document.getElementById('g-save').addEventListener('click', async ()=>{
   if(!isYonetici()) return;
@@ -1511,16 +1557,120 @@ document.getElementById('g-save').addEventListener('click', async ()=>{
   const activity = document.getElementById('g-activity').value.trim();
   if(!name || !url){ return; }
   if(!/^https?:\/\//i.test(url)){ alert('Lütfen geçerli bir link girin (https:// ile başlamalı).'); return; }
-  fbGroups.push({name,url,members,activity});
-  await saveFbGroups();
-  await logActivity('fb_group_add', name);
+  if(editingGroupIdx !== null){
+    const existing = fbGroups[editingGroupIdx];
+    fbGroups[editingGroupIdx] = { ...existing, name, url, members, activity };
+    await saveFbGroups();
+    await logActivity('fb_group_edit', name);
+  } else {
+    fbGroups.push({name,url,members,activity,pendingApproval:false});
+    await saveFbGroups();
+    await logActivity('fb_group_add', name);
+  }
   renderFbGroupPicker();
   document.getElementById('g-name').value = '';
   document.getElementById('g-url').value = '';
   document.getElementById('g-members').value = '';
   document.getElementById('g-activity').value = '';
+  editingGroupIdx = null;
   groupBackdrop.classList.remove('open');
 });
+
+/* ============ FB PAYLAŞIM LOGLARI (sadece Yönetici) ============ */
+let shareLogs = [];
+async function saveShareLogs(){ await saveList('shareLogs', shareLogs); }
+
+function logMonthKey(entry){
+  if(entry.atISO) return entry.atISO.slice(0,7); // "YYYY-MM"
+  // eski kayıtlar için tr-TR toLocaleString formatını ("d.m.yyyy, hh:mm:ss") ayrıştırmayı dene
+  const m = (entry.at||'').match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if(m) return `${m[3]}-${String(m[2]).padStart(2,'0')}`;
+  return 'bilinmiyor';
+}
+function monthLabel(key){
+  if(key === 'bilinmiyor') return 'Tarih bilinmiyor';
+  const [y,m] = key.split('-');
+  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  return `${aylar[parseInt(m)-1]} ${y}`;
+}
+
+function renderFbLogsPanel(selectedMonth){
+  const panel = document.getElementById('fb-logs-panel');
+  if(!shareLogs.length){
+    panel.innerHTML = '<div class="panel-card" style="max-width:none;"><h3 style="margin-top:0; font-size:16px;">Paylaşım Logları</h3><p style="color:var(--text-muted); font-size:12.5px;">Henüz paylaşım kaydı yok.</p></div>';
+    return;
+  }
+  const months = [...new Set(shareLogs.map(logMonthKey))].sort().reverse();
+  const month = selectedMonth || months[0];
+  const monthEntries = shareLogs.filter(e => logMonthKey(e) === month);
+
+  // kullanıcı > grup > adet
+  const byUser = {};
+  monthEntries.forEach(e=>{
+    if(!byUser[e.user]) byUser[e.user] = { total:0, groups:{} };
+    byUser[e.user].total++;
+    byUser[e.user].groups[e.groupName] = (byUser[e.user].groups[e.groupName]||0) + 1;
+  });
+
+  let html = '<div class="panel-card" style="max-width:none;">';
+  html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">';
+  html += '<h3 style="margin:0; font-size:16px;">Paylaşım Logları — ' + monthLabel(month) + '</h3>';
+  html += '<div style="display:flex; gap:8px; align-items:center;">';
+  html += '<select id="fb-log-month-select" style="background:rgba(5,4,3,.6); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-family:\'Space Grotesk\',sans-serif; font-size:12.5px;">';
+  months.forEach(m => { html += `<option value="${m}" ${m===month?'selected':''}>${monthLabel(m)}</option>`; });
+  html += '</select>';
+  html += '<button class="btn btn-ghost" id="fb-log-download" style="font-size:12px; padding:8px 12px;">İndir (CSV)</button>';
+  html += '</div></div>';
+
+  const userNames = Object.keys(byUser).sort((a,b)=> byUser[b].total - byUser[a].total);
+  if(!userNames.length){
+    html += '<p style="color:var(--text-muted); font-size:12.5px;">Bu ay için kayıt yok.</p>';
+  } else {
+    userNames.forEach(u=>{
+      const info = byUser[u];
+      html += `<div style="margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--line);">`;
+      html += `<div style="font-size:14px; color:var(--gold-bright); font-weight:600; margin-bottom:6px;">${u} — toplam ${info.total} gönderi</div>`;
+      html += '<table class="data-table"><tr><th>Facebook Grubu</th><th>Gönderi Sayısı</th></tr>';
+      Object.keys(info.groups).sort((a,b)=> info.groups[b]-info.groups[a]).forEach(gName=>{
+        html += `<tr><td>${gName}</td><td>${info.groups[gName]}</td></tr>`;
+      });
+      html += '</table></div>';
+    });
+  }
+  html += '<p style="color:var(--text-muted); font-size:11.5px; margin-top:10px;">Veriler otomatik olarak ~1 yıl boyunca saklanır. Geçmiş ayları karşılaştırmak için yukarıdaki aydan seçim yap veya "İndir" ile tüm geçmişi CSV olarak dışa aktar.</p>';
+  html += '</div>';
+  panel.innerHTML = html;
+
+  document.getElementById('fb-log-month-select').addEventListener('change', (e)=>{
+    renderFbLogsPanel(e.target.value);
+  });
+  document.getElementById('fb-log-download').addEventListener('click', downloadShareLogsCsv);
+}
+
+function downloadShareLogsCsv(){
+  const header = 'Kullanici,Facebook Grubu,Pozisyon,Firma,Tarih';
+  const rows = shareLogs.map(e => [e.user, e.groupName, e.jobTitle, e.company, e.at]
+    .map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','));
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `carriere-paylasim-loglari-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('open-fb-logs').addEventListener('click', ()=>{
+  const panel = document.getElementById('fb-logs-panel');
+  const isOpen = panel.style.display !== 'none';
+  if(isOpen){ panel.style.display = 'none'; return; }
+  renderFbLogsPanel();
+  panel.style.display = 'block';
+});
+
 
 document.getElementById('fb-share-btn').addEventListener('click', async ()=>{
   const errBox = document.getElementById('fb-share-error');
@@ -1545,6 +1695,22 @@ document.getElementById('fb-share-btn').addEventListener('click', async ()=>{
   try{ await navigator.clipboard.writeText(fbText); }catch(e){}
 
   await logActivity('fb_share', `${socialSelectedClient ? socialSelectedClient.client+' — '+socialSelectedClient.title : ''} metni ${selectedGroups.length} grup için kopyalandı ve sekmeler açıldı (${selectedGroups.map(g=>g.name).join(', ')})`);
+
+  const shareUser = currentUser ? (currentUser.name ? (currentUser.name+' '+(currentUser.surname||'')) : (currentUser.username||currentUser.email)) : '—';
+  const nowAt = nowStr();
+  const nowIso = new Date().toISOString();
+  selectedGroups.forEach(g=>{
+    shareLogs.unshift({
+      user: shareUser,
+      groupName: g.name,
+      jobTitle: socialSelectedClient ? socialSelectedClient.title : '—',
+      company: socialSelectedClient ? socialSelectedClient.client : '—',
+      at: nowAt,
+      atISO: nowIso
+    });
+  });
+  shareLogs = shareLogs.slice(0, 8000); // ~1 yıllık veri için geniş kapasite
+  await saveShareLogs();
 
   const btn = document.getElementById('fb-share-btn');
   const old = btn.textContent;
