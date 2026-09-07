@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carriere — Recruitment Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Firebase config: kendi Firebase projenin değerleriyle değiştir (README.md içindeki talimatlara bak) -->
+<script>
+  window.FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCeNkoex2kXFk6U1z4kAVD3sT9W76myIzQ",
+    authDomain: "carriere-portal.firebaseapp.com",
+    projectId: "carriere-portal",
+    storageBucket: "carriere-portal.firebasestorage.app",
+    messagingSenderId: "750706023484",
+    appId: "1:750706023484:web:ddba50fe5e4c77c0a5b739"
+  };
+</script>
+<style>
+  :root{
+    --bg-deep:#050403;
+    --bg-panel:#12100a;
+    --bg-panel-2:#181409;
+    --line:#3a2f18;
+    --gold:#d4af37;
+    --gold-bright:#f5d9a0;
+    --gold-soft:#8a6a24;
+    --text:#f3ecd9;
+    --text-muted:#a89a76;
+    --danger:#e0785a;
+    --ok:#8fd0a0;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg-deep);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.serif{font-family:'Cormorant Garamond', serif; letter-spacing:.01em;}
+  a{color:var(--gold);}
+  canvas#sky{position:fixed; inset:0; width:100%; height:100%; z-index:0; display:block;}
+
+  .saturn{
+    position:fixed; top:6%; right:-70px; width:260px; height:260px; z-index:1;
+    opacity:.5; pointer-events:none;
+    filter:drop-shadow(0 0 50px rgba(212,175,55,.22));
+  }
+  .saturn .ring{
+    position:absolute; top:50%; left:50%; width:150%; height:34%;
+    border:9px solid rgba(212,175,55,.28); border-radius:50%;
+    transform:translate(-50%,-50%) rotate(-16deg);
+  }
+  .saturn .body{
+    position:absolute; inset:0; border-radius:50%;
+    background:radial-gradient(circle at 34% 30%, #f3d998, #c79c3f 45%, #6d4f19 82%, #3b2b0d 100%);
+    box-shadow:inset -22px -14px 44px rgba(0,0,0,.55);
+  }
+
+  .veil{
+    position:fixed; inset:0; z-index:2; pointer-events:none;
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(212,175,55,.08), transparent 55%),
+      radial-gradient(ellipse at 88% 85%, rgba(212,175,55,.06), transparent 50%);
+  }
+  .stage{position:relative; z-index:3; min-height:100vh;}
+
+  /* ---------- LOGIN / REGISTER ---------- */
+  #login-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .login-card{
+    width:100%; max-width:410px;
+    background:linear-gradient(180deg, rgba(24,20,9,.9), rgba(10,8,4,.92));
+    border:1px solid var(--line); border-radius:var(--radius);
+    padding:38px 34px 30px;
+    backdrop-filter:blur(6px);
+    box-shadow:0 0 0 1px rgba(212,175,55,.06), 0 30px 80px -20px rgba(0,0,0,.8), 0 0 60px -15px rgba(212,175,55,.18);
+  }
+  .brand-mark{display:flex; align-items:center; gap:10px; margin-bottom:22px;}
+  .brand-mark span{font-size:13px; letter-spacing:.14em; color:var(--text-muted);}
+  .login-card h1{font-size:30px; font-weight:600; margin:0 0 6px; color:var(--text);}
+  .login-card p.lead{margin:0 0 24px; color:var(--text-muted); font-size:13.5px; line-height:1.5;}
+  label{display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;}
+  .field{margin-bottom:15px;}
+  input[type=text], input[type=password], input[type=email], input[type=tel]{
+    width:100%; background:rgba(5,4,3,.6); border:1px solid var(--line); border-radius:9px;
+    padding:11px 13px; color:var(--text); font-family:'Space Grotesk', sans-serif; font-size:14px;
+    outline:none; transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  input:focus{border-color:var(--gold); box-shadow:0 0 0 3px rgba(212,175,55,.16);}
+  .checkline{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-muted); margin:2px 0 4px;}
+  .checkline input{width:14px; height:14px; accent-color:var(--gold);}
+
+  .btn{appearance:none; border:none; cursor:pointer; font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14px; border-radius:9px; padding:12px 18px; transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{
+    width:100%; background:#0a0806; color:var(--gold-bright);
+    border:1px solid rgba(212,175,55,.55);
+    text-shadow:0 0 8px rgba(245,217,160,.85), 0 0 18px rgba(212,175,55,.45);
+    margin-top:4px;
+    animation:glowpulse 2.6s ease-in-out infinite;
+  }
+  @keyframes glowpulse{
+    0%,100%{box-shadow:0 0 10px rgba(212,175,55,.2);}
+    50%{box-shadow:0 0 26px rgba(212,175,55,.5);}
+  }
+  .switch-form{margin-top:16px; font-size:12.5px; color:var(--text-muted); text-align:center;}
+  .switch-form a{cursor:pointer; text-decoration:underline;}
+  .error-msg{color:var(--danger); font-size:12.5px; margin:-6px 0 14px; display:none;}
+  .ok-msg{color:var(--ok); font-size:12.5px; margin:-6px 0 14px; display:none;}
+
+  /* ---------- APP SHELL ---------- */
+  #app-screen{display:none; min-height:100vh;}
+  .shell{display:grid; grid-template-columns:230px 1fr; min-height:100vh;}
+  .sidebar{border-right:1px solid var(--line); background:rgba(9,7,3,.55); backdrop-filter:blur(4px); padding:26px 18px; display:flex; flex-direction:column;}
+  .sidebar .brand-mark{margin-bottom:34px; padding-left:4px;}
+  .nav-item{display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:9px; color:var(--text-muted); cursor:pointer; font-size:14px; margin-bottom:4px; transition:background .15s ease, color .15s ease; user-select:none;}
+  .nav-item svg{opacity:.8; flex:0 0 auto;}
+  .nav-item:hover{background:rgba(212,175,55,.08); color:var(--text);}
+  .nav-item.active{background:rgba(212,175,55,.14); color:var(--gold-bright); box-shadow:inset 0 0 0 1px rgba(212,175,55,.25);}
+  .role-badge{
+    display:inline-block; margin-top:14px; font-size:11px; padding:4px 9px; border-radius:20px;
+    border:1px solid var(--gold-soft); color:var(--gold-bright); background:rgba(212,175,55,.08);
+  }
+
+  .topbar{display:flex; justify-content:flex-end; gap:6px; padding:18px 30px 0;}
+  .icon-btn{
+    width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(24,20,9,.6); border:1px solid var(--line); color:var(--text-muted); cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .icon-btn:hover{border-color:var(--gold); color:var(--gold-bright);}
+
+  .main{padding:12px 40px 60px; max-width:1100px;}
+  .main-header{display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:26px; gap:20px; flex-wrap:wrap;}
+  .main-header h2{font-size:29px; font-weight:600; margin:0 0 4px;}
+  .main-header p{margin:0; color:var(--text-muted); font-size:13.5px;}
+  .btn-ghost{background:rgba(212,175,55,.08); color:var(--text); border:1px solid rgba(212,175,55,.35);}
+  .btn-ghost:hover{background:rgba(212,175,55,.16);}
+  .btn-ghost:disabled{opacity:.35; cursor:not-allowed;}
+  .btn-secondary{background:transparent; color:var(--text-muted); border:1px solid var(--line);}
+  .btn-secondary:hover{color:var(--text); border-color:var(--gold);}
+  .btn-danger{background:transparent; color:var(--danger); border:1px solid rgba(224,120,90,.4); font-size:12px; padding:6px 10px;}
+  .btn-danger:hover{background:rgba(224,120,90,.1);}
+
+  /* client list */
+  .client-group{margin-bottom:10px; border:1px solid var(--line); border-radius:var(--radius); background:rgba(18,16,10,.55); overflow:hidden;}
+  .client-group-head{display:flex; align-items:center; justify-content:space-between; padding:15px 18px; cursor:pointer;}
+  .client-group-head .name{font-family:'Cormorant Garamond', serif; font-size:20px; font-weight:600;}
+  .client-group-head .count{font-size:12px; color:var(--text-muted);}
+  .chev{transition:transform .18s ease; color:var(--text-muted);}
+  .client-group.open .chev{transform:rotate(90deg);}
+  .positions{display:none; border-top:1px solid var(--line);}
+  .client-group.open .positions{display:block;}
+  .position-row{display:grid; grid-template-columns:1.4fr .7fr .9fr auto auto; gap:14px; align-items:center; padding:13px 18px; border-top:1px solid rgba(58,47,24,.5); font-size:13.5px;}
+  .position-row:first-child{border-top:none;}
+  .position-row .title{font-weight:500;}
+  .position-row .loc, .position-row .pay{color:var(--text-muted); font-size:12.5px;}
+  .position-row .expand-btn{justify-self:end; color:var(--gold); background:none; border:none; font-family:'Space Grotesk', sans-serif; font-size:12px; cursor:pointer; padding:4px 8px;}
+  .position-detail{display:none; padding:0 18px 16px 18px; font-size:12.8px; color:var(--text-muted); line-height:1.6; border-top:1px dashed rgba(58,47,24,.6);}
+  .position-detail.open{display:block; padding-top:12px;}
+
+  /* modal */
+  .modal-backdrop{display:none; position:fixed; inset:0; z-index:60; background:rgba(2,2,1,.7); align-items:center; justify-content:center; padding:20px;}
+  .modal-backdrop.open{display:flex;}
+  .modal{width:100%; max-width:480px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:var(--radius); padding:26px 26px 22px; box-shadow:0 30px 80px -20px rgba(0,0,0,.85), 0 0 60px -15px rgba(212,175,55,.16); max-height:86vh; overflow-y:auto;}
+  .modal h3{margin:0 0 16px; font-size:22px;}
+  .modal .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .modal-actions{display:flex; gap:10px; margin-top:18px; justify-content:flex-end;}
+
+  /* CV screen */
+  .dropzone{border:1.5px dashed var(--line); border-radius:var(--radius); padding:44px 24px; text-align:center; cursor:pointer; background:rgba(18,16,10,.4); transition:border-color .15s ease, background .15s ease;}
+  .dropzone.drag{border-color:var(--gold); background:rgba(212,175,55,.06);}
+  .dropzone h3{margin:14px 0 6px; font-size:20px; font-weight:600;}
+  .dropzone p{margin:0; color:var(--text-muted); font-size:13px;}
+  .dropzone input{display:none;}
+
+  .mode-options{display:flex; flex-direction:column; gap:10px; margin-bottom:16px;}
+  .mode-option{display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border:1px solid var(--line); border-radius:10px; background:rgba(18,16,10,.4); cursor:pointer; transition:border-color .15s ease, background .15s ease;}
+  .mode-option:hover{border-color:var(--gold-soft);}
+  .mode-option input[type=checkbox]{margin-top:3px; width:16px; height:16px; accent-color:var(--gold); flex:0 0 auto;}
+  .mode-option:has(input:checked){border-color:var(--gold); background:rgba(212,175,55,.08);}
+  .mode-title{display:block; font-size:13.5px; font-weight:600; color:var(--text);}
+  .mode-desc{display:block; font-size:12px; color:var(--text-muted); margin-top:2px;}
+
+  .client-picker{max-height:220px; overflow-y:auto; border:1px solid var(--line); border-radius:10px; background:rgba(5,4,3,.5); margin-bottom:16px;}
+  .client-picker-item{padding:10px 14px; font-size:13px; cursor:pointer; border-bottom:1px solid rgba(58,47,24,.5); transition:background .12s ease;}
+  .client-picker-item:last-child{border-bottom:none;}
+  .client-picker-item:hover{background:rgba(212,175,55,.08);}
+  .client-picker-item.selected{background:rgba(212,175,55,.16); color:var(--gold-bright);}
+  .client-picker-item .cp-client{font-weight:600;}
+  .client-picker-item .cp-title{color:var(--text-muted); font-size:12px;}
+  .client-picker-item.selected .cp-title{color:var(--gold-bright);}
+  .analyzing{display:none; align-items:center; gap:12px; margin-top:20px; color:var(--gold-bright); font-size:13.5px;}
+  .spinner{width:16px; height:16px; border-radius:50%; border:2px solid rgba(212,175,55,.25); border-top-color:var(--gold); animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .report{display:none; margin-top:26px; background:rgba(18,16,10,.6); border:1px solid var(--line); border-radius:var(--radius); padding:26px 28px; font-size:14px; line-height:1.7;}
+  .report h1,.report h2,.report h3{font-family:'Cormorant Garamond', serif;}
+  .report h2{font-size:22px; margin:22px 0 8px; border-top:1px solid var(--line); padding-top:18px;}
+  .report h2:first-child{border-top:none; padding-top:0; margin-top:0;}
+  .report strong{color:var(--gold-bright);}
+  .report ul{padding-left:20px; margin:8px 0;}
+  .history{margin-top:34px;}
+  .history h3{font-size:17px; color:var(--text-muted); font-weight:500; margin-bottom:12px;}
+  .history-item{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border:1px solid var(--line); border-radius:10px; margin-bottom:8px; cursor:pointer; font-size:13.5px; background:rgba(18,16,10,.4);}
+  .history-item:hover{border-color:var(--gold);}
+  .history-item .meta{color:var(--text-muted); font-size:12px;}
+  .error-box{display:none; margin-top:18px; padding:14px 16px; border:1px solid rgba(224,120,90,.4); background:rgba(224,120,90,.08); border-radius:10px; color:var(--danger); font-size:13px;}
+
+  /* Profile / Help / Edit panels */
+  .panel-card{background:rgba(18,16,10,.55); border:1px solid var(--line); border-radius:var(--radius); padding:26px 28px; max-width:520px;}
+  .panel-card .field{margin-bottom:16px;}
+
+  .subtabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+  .subtab{padding:8px 14px; border-radius:8px; border:1px solid var(--line); font-size:13px; cursor:pointer; color:var(--text-muted);}
+  .subtab.active{border-color:var(--gold); color:var(--gold-bright); background:rgba(212,175,55,.08);}
+
+  table.data-table{width:100%; border-collapse:collapse; font-size:13px;}
+  table.data-table th, table.data-table td{border:1px solid var(--line); padding:9px 10px; text-align:left;}
+  table.data-table th{color:var(--text-muted); font-weight:500; font-size:12px;}
+  table.data-table select{background:rgba(5,4,3,.6); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:5px 6px; font-family:'Space Grotesk',sans-serif; font-size:12.5px;}
+
+  /* chat widget */
+  #chat-toggle{
+    position:fixed; bottom:24px; right:24px; z-index:80;
+    width:56px; height:56px; border-radius:50%; cursor:pointer;
+    background:#0a0806 radial-gradient(circle at 35% 30%, rgba(212,175,55,.35), transparent 60%);
+    border:1px solid rgba(212,175,55,.5);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 26px -6px rgba(0,0,0,.6), 0 0 22px -6px rgba(212,175,55,.4);
+  }
+  #chat-panel{
+    position:fixed; bottom:92px; right:24px; z-index:80; width:320px; max-height:440px;
+    background:linear-gradient(180deg, rgba(24,20,9,.96), rgba(8,7,3,.98));
+    border:1px solid var(--line); border-radius:var(--radius);
+    display:none; flex-direction:column; overflow:hidden;
+    box-shadow:0 30px 70px -20px rgba(0,0,0,.85), 0 0 40px -10px rgba(212,175,55,.18);
+  }
+  #chat-panel.open{display:flex;}
+  .chat-head{padding:14px 16px; border-bottom:1px solid var(--line); font-size:13.5px; display:flex; align-items:center; gap:8px;}
+  .chat-messages{flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:10px; font-size:12.8px;}
+  .chat-msg .who{color:var(--gold-bright); font-weight:600; margin-right:6px;}
+  .chat-msg .when{color:var(--text-muted); font-size:10.5px; margin-left:4px;}
+  .chat-input-row{display:flex; gap:8px; padding:12px; border-top:1px solid var(--line);}
+  .chat-input-row input{flex:1; background:rgba(5,4,3,.6); border:1px solid var(--line); border-radius:8px; padding:9px 11px; color:var(--text); font-family:'Space Grotesk',sans-serif; font-size:12.8px; outline:none;}
+  .chat-input-row input:focus{border-color:var(--gold);}
+  .chat-send{background:var(--gold); border:none; color:#0a0806; border-radius:8px; padding:0 14px; cursor:pointer; font-weight:600; font-size:12.5px;}
+
+  @media (max-width:760px){
+    .shell{grid-template-columns:1fr;}
+    .sidebar{flex-direction:row; overflow-x:auto; padding:14px 16px; align-items:center;}
+    .sidebar .brand-mark, .role-badge{display:none;}
+    .nav-item{margin-bottom:0; white-space:nowrap;}
+    .main{padding:20px 18px 50px;}
+    .position-row{grid-template-columns:1fr; gap:4px;}
+    .position-row .expand-btn{justify-self:start;}
+    #chat-panel{width:calc(100vw - 32px); right:16px;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="sky"></canvas>
+<div class="saturn"><div class="ring"></div><div class="body"></div></div>
+<div class="veil"></div>
+
+<div class="stage">
+
+  <!-- LOGIN / REGISTER -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg>
+        <span>CARRIERE</span>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="login-block">
+        <h1>Recruitment Atlas</h1>
+        <p class="lead">Client haritasına ve aday analiz merkezine özel erişim.</p>
+        <form id="login-form">
+          <div class="field"><label for="user">E-posta</label><input type="email" id="user" autocomplete="off"></div>
+          <div class="field"><label for="pass">Şifre</label><input type="password" id="pass" autocomplete="off"></div>
+          <div class="checkline"><input type="checkbox" id="remember"><label for="remember" style="margin:0;">Giriş bilgilerimi kaydet</label></div>
+          <div class="error-msg" id="login-error">Kullanıcı adı veya şifre hatalı.</div>
+          <button type="submit" class="btn btn-primary">Giriş Yap</button>
+        </form>
+        <div class="switch-form">Hesabınız yok mu? <a id="go-register">Kayıt olun</a></div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="register-block" style="display:none;">
+        <h1>Kayıt Ol</h1>
+        <p class="lead">Bilgilerinizi girerek yeni bir üyelik oluşturun.</p>
+        <form id="register-form">
+          <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="field"><label>Ad</label><input type="text" id="r-name"></div>
+            <div class="field"><label>Soyad</label><input type="text" id="r-surname"></div>
+          </div>
+          <div class="field"><label>Kullanıcı adı</label><input type="text" id="r-user"></div>
+          <div class="field"><label>E-posta</label><input type="email" id="r-email"></div>
+          <div class="field"><label>Şifre</label><input type="password" id="r-pass"></div>
+          <div class="error-msg" id="register-error"></div>
+          <div class="ok-msg" id="register-ok"></div>
+          <button type="submit" class="btn btn-primary">Kayıt Ol</button>
+        </form>
+        <div class="switch-form">Zaten hesabınız var mı? <a id="go-login">Giriş yapın</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app-screen">
+    <div class="shell">
+      <div class="sidebar">
+        <div class="brand-mark">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg>
+          <span>CARRIERE</span>
+        </div>
+        <div class="nav-item active" data-view="clients">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>
+          Clientler
+        </div>
+        <div class="nav-item" data-view="cv">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg>
+          Yeni Aday (CV)
+        </div>
+        <div id="who-box" style="margin-top:auto; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--text-muted);">
+          Oturum: <b id="who" style="color:var(--text);"></b>
+          <div><span class="role-badge" id="role-badge"></span></div>
+        </div>
+      </div>
+
+      <div style="flex:1; display:flex; flex-direction:column;">
+        <div class="topbar">
+          <div class="icon-btn" id="btn-edit" title="Yönetici Paneli" style="display:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <div class="icon-btn" id="btn-profile" title="Profil">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>
+          </div>
+          <div class="icon-btn" id="btn-help" title="Yardım">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.9.4-1.5 1-1.5 2.2"/><circle cx="12" cy="17" r=".4" fill="currentColor"/></svg>
+          </div>
+          <div class="icon-btn" id="btn-logout" title="Çıkış Yap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+          </div>
+        </div>
+
+        <div class="main">
+
+          <!-- CLIENTS VIEW -->
+          <div id="view-clients">
+            <div class="main-header">
+              <div><h2>Client Haritası</h2><p id="client-sub">— açık pozisyon</p></div>
+              <button class="btn btn-ghost" id="open-add-client">+ Yeni Client / Pozisyon</button>
+            </div>
+            <div id="client-list"></div>
+          </div>
+
+          <!-- CV VIEW -->
+          <div id="view-cv" style="display:none;">
+            <div class="main-header">
+              <div><h2>Yeni Aday Analizi</h2><p>CV yükle, kısa ve net bir uygunluk özeti al.</p></div>
+            </div>
+
+            <div class="mode-options">
+              <label class="mode-option" for="mode-scan">
+                <input type="checkbox" id="mode-scan">
+                <span class="mode-box">
+                  <span class="mode-title">Best matching client</span>
+                  <span class="mode-desc">Scan all clients, show the best match with pros/cons and a score out of 100.</span>
+                </span>
+              </label>
+              <label class="mode-option" for="mode-specific">
+                <input type="checkbox" id="mode-specific">
+                <span class="mode-box">
+                  <span class="mode-title">Check suitability for a specific client</span>
+                  <span class="mode-desc">Pick one open position, then check if this candidate fits it directly.</span>
+                </span>
+              </label>
+            </div>
+
+            <div id="client-picker-wrap" style="display:none;">
+              <label style="display:block; font-size:12px; color:var(--text-muted); margin:14px 0 6px;">Select the position this candidate applied for:</label>
+              <div class="client-picker" id="client-picker"></div>
+            </div>
+
+            <div class="dropzone" id="dropzone">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.4" style="margin:0 auto; display:block;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 11v6M9 14l3-3 3 3"/></svg>
+              <h3>PDF CV'yi buraya bırak</h3>
+              <p>veya tıklayıp dosya seç &middot; sadece .pdf</p>
+              <input type="file" id="file-input" accept="application/pdf">
+            </div>
+            <div class="analyzing" id="analyzing"><div class="spinner"></div> Aday değerlendiriliyor…</div>
+            <div class="error-box" id="error-box"></div>
+            <div class="report" id="report"></div>
+            <div class="history" id="history-wrap" style="display:none;"><h3>Geçmiş Analizler</h3><div id="history-list"></div></div>
+          </div>
+
+          <!-- PROFILE VIEW -->
+          <div id="view-profile" style="display:none;">
+            <div class="main-header"><div><h2>Profil</h2><p>Kişisel bilgilerinizi güncelleyin.</p></div></div>
+            <div class="panel-card">
+              <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="field"><label>Ad</label><input type="text" id="p-name"></div>
+                <div class="field"><label>Soyad</label><input type="text" id="p-surname"></div>
+              </div>
+              <div class="field"><label>Telefon</label><input type="tel" id="p-phone" placeholder="+31 6 ..."></div>
+              <div class="field"><label>E-posta</label><input type="email" id="p-email"></div>
+              <div class="ok-msg" id="profile-ok">Kaydedildi.</div>
+              <button class="btn btn-ghost" id="save-profile">Kaydet</button>
+            </div>
+          </div>
+
+          <!-- HELP VIEW -->
+          <div id="view-help" style="display:none;">
+            <div class="main-header"><div><h2>Yardım</h2></div></div>
+            <div class="panel-card">
+              <p style="color:var(--text-muted); font-size:14px; line-height:1.7;">Herhangi bir sorunuz için bize ulaşın:</p>
+              <p><a href="mailto:g.ziypak@carriere.com" style="font-size:15px;">g.ziypak@carriere.com</a></p>
+            </div>
+          </div>
+
+          <!-- EDIT (ADMIN) VIEW -->
+          <div id="view-edit" style="display:none;">
+            <div class="main-header"><div><h2>Yönetici Paneli</h2><p>Üyeler, erişim seviyeleri ve sistem logları.</p></div></div>
+            <div class="subtabs">
+              <div class="subtab active" data-etab="members">Üyeler</div>
+              <div class="subtab" data-etab="logins">Giriş Kayıtları</div>
+              <div class="subtab" data-etab="logs">Aktivite Logları</div>
+              <div class="subtab" data-etab="notif">Kayıt Bildirimleri</div>
+            </div>
+            <div id="etab-members"></div>
+            <div id="etab-logins" style="display:none;"></div>
+            <div id="etab-logs" style="display:none;"></div>
+            <div id="etab-notif" style="display:none;"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD CLIENT MODAL -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal">
+      <h3>Yeni Pozisyon Ekle</h3>
+      <div class="field"><label>Client adı</label><input type="text" id="m-client" placeholder="örn. Lamers by Aalberts"></div>
+      <div class="field"><label>Pozisyon başlığı</label><input type="text" id="m-title" placeholder="örn. CNC Operator"></div>
+      <div class="row2"><div class="field"><label>Lokasyon</label><input type="text" id="m-loc"></div><div class="field"><label>Çalışma saati</label><input type="text" id="m-hours"></div></div>
+      <div class="field"><label>Maaş</label><input type="text" id="m-pay"></div>
+      <div class="field"><label>Notlar</label><input type="text" id="m-notes"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="m-cancel">Vazgeç</button>
+        <button class="btn btn-primary" style="width:auto;" id="m-save">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT PASSWORD GATE MODAL -->
+  <div class="modal-backdrop" id="gate-backdrop">
+    <div class="modal" style="max-width:340px;">
+      <h3>Yönetici Doğrulama</h3>
+      <div class="field"><label>Yönetici şifresi</label><input type="password" id="gate-pass"></div>
+      <div class="error-msg" id="gate-error">Şifre hatalı.</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="gate-cancel">Vazgeç</button>
+        <button class="btn btn-primary" style="width:auto;" id="gate-confirm">Onayla</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CHAT WIDGET -->
+<div id="chat-toggle">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg>
+</div>
+<div id="chat-panel">
+  <div class="chat-head"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg> Carriere Ekip Sohbeti</div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chat-input" placeholder="Mesaj yaz...">
+    <button class="chat-send" id="chat-send">Gönder</button>
+  </div>
+</div>
+
+<script type="module">
+/* ============ FIREBASE SETUP ============ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signOut, setPersistence, browserLocalPersistence, browserSessionPersistence
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+const app = initializeApp(window.FIREBASE_CONFIG);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ============ STARFIELD (aynı, değişmedi) ============ */
+const canvas = document.getElementById('sky');
+const ctx = canvas.getContext('2d');
+let W, H, stars = [], shootingStars = [];
+function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+function initStars(){
+  stars = [];
+  const count = Math.floor((W*H)/9000);
+  for(let i=0;i<count;i++){
+    stars.push({x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.3+0.3, baseAlpha:Math.random()*0.6+0.25, twinkleSpeed:Math.random()*0.02+0.005, phase:Math.random()*Math.PI*2, hue: Math.random()<0.35?'gold':'white'});
+  }
+}
+initStars(); window.addEventListener('resize', initStars);
+function maybeSpawnShootingStar(){
+  if(Math.random() < 0.012 && shootingStars.length < 3){
+    const startX = Math.random()*W*0.6 + W*0.2;
+    shootingStars.push({x:startX, y:-10, vx:4+Math.random()*3, vy:3+Math.random()*2, life:0, maxLife:60+Math.random()*20});
+  }
+}
+function drawStar(s, alpha){
+  const color = s.hue==='gold' ? `rgba(212,175,55,${alpha})` : `rgba(243,236,217,${alpha})`;
+  ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+}
+function tick(){
+  ctx.clearRect(0,0,W,H);
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#050403'); g.addColorStop(1,'#0e0a04');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  for(const s of stars){ s.phase += s.twinkleSpeed; const a = s.baseAlpha + Math.sin(s.phase)*0.25; drawStar(s, Math.max(0.1, Math.min(1,a))); }
+  maybeSpawnShootingStar();
+  shootingStars = shootingStars.filter(m => m.life < m.maxLife);
+  for(const m of shootingStars){
+    m.life++; m.x += m.vx; m.y += m.vy;
+    const grad = ctx.createLinearGradient(m.x, m.y, m.x-m.vx*9, m.y-m.vy*9);
+    grad.addColorStop(0, 'rgba(245,217,160,0.95)'); grad.addColorStop(1, 'rgba(245,217,160,0)');
+    ctx.strokeStyle = grad; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x-m.vx*9, m.y-m.vy*9); ctx.stroke();
+  }
+  requestAnimationFrame(tick);
+}
+tick();
+
+function nowStr(){ return new Date().toLocaleString('tr-TR'); }
+
+/* ============ FIRESTORE HELPERS (appdata/{id} = {list:[...]}) ============ */
+async function loadList(id, fallback){
+  try{
+    const snap = await getDoc(doc(db,'appdata',id));
+    return snap.exists() && snap.data().list ? snap.data().list : fallback;
+  }catch(e){ console.error(e); return fallback; }
+}
+async function saveList(id, list){
+  try{ await setDoc(doc(db,'appdata',id), {list}); }catch(e){ console.error(e); }
+}
+async function loadAllUsers(){
+  const out = [];
+  try{
+    const snap = await getDocs(collection(db,'users'));
+    snap.forEach(d => out.push({uid:d.id, ...d.data()}));
+  }catch(e){ console.error(e); }
+  return out;
+}
+
+/* ============ APP STATE ============ */
+let clients = [];
+let activityLog = [];
+let chatMessages = [];
+let notifications = [];
+let users = [];
+let currentUser = null; // {uid, username, name, surname, email, phone, role}
+
+const DEFAULT_CLIENTS = [
+  {client:"De Graaf Bakeries", title:"Operator Productie", loc:"Bunschoten-Spakenburg", hours:"38h/hafta, 3 vardiya", pay:"€2.880–€3.868 brüt/ay", notes:"Deneyim şart değil, şirket içi eğitim (6-8 hafta) var."},
+  {client:"DHL", title:"VAS Technician", loc:"Beringe, Limburg", hours:"40h/hafta, gündüz 06:00-18:00", pay:"€2.753,90–€3.420,55 brüt/ay", notes:"MBO-4 teknik eğitim, min B2 İngilizce, elektronik/telekom/fiber optik ilgisi."},
+  {client:"Brouwer Group", title:"Electrical Engineer", loc:"Zeewolde", hours:"32h/hafta (esnek)", pay:"€3.317,20–€4.000 brüt/ay", notes:"EPLAN/AutoCAD Electrical, NEN 1010 avantaj, iyi Hollandaca gerekli."},
+  {client:"Brouwer Group", title:"Process Engineer", loc:"Zeewolde", hours:"38-40h/hafta", pay:"€3.700–€4.000 brüt/ay", notes:"HBO/WO Makine/Kimya/Proses Mühendisliği geçmişi."},
+  {client:"Brouwer Group", title:"Plumber (Loodgieter)", loc:"Zeewolde", hours:"45h/hafta, Pzt-Cuma 07:00-16:00", pay:"€19,14 brüt/saat + ADV", notes:"Tesisatçı deneyimi, teknik çizim okuma, İngilizce iletişim."},
+  {client:"Kuehne + Nagel", title:"Maintenance Engineer", loc:"Tilburg & Zwolle (2 pozisyon)", hours:"40h/hafta", pay:"€19,63 brüt/saat + vardiya primi (%35-%45)", notes:"Mekanik/elektrik bakım deneyimi, konaklama ve araç sağlanabilir."},
+  {client:"Mifa Aluminium", title:"CNC Operator", loc:"Venlo", hours:"3 vardiya, %23,5 prim", pay:"€17,04 brüt/saat başlangıç (€2.950–€3.875/ay)", notes:"CNC deneyimi şart değil, teknik yatkınlık ve çizim okuma önemli."},
+  {client:"Mogema by Aalberts", title:"Allround Maintenance Technician", loc:"'t Harde / Dronten", hours:"36-40h/hafta, 2 vardiya", pay:"€3.319–€5.376 brüt/ay", notes:"Mekanik + elektrik bakım, Hollandaca VE İngilizce gerekli."},
+  {client:"Mogema by Aalberts", title:"CNC Miller / CNC Frezer (Grootverspaning)", loc:"'t Harde", hours:"36-40h/hafta, 4 vardiya (%28 prim)", pay:"€3.180–€5.376 brüt/ay (kademeye göre)", notes:"Fanuc/Heidenhain/Siemens, büyük parça işleme deneyimi tercih."},
+  {client:"Pneutec by Aalberts", title:"Warehouse Associate", loc:"Vessem", hours:"40h/hafta", pay:"€2.500–€3.000 brüt/ay", notes:"MBO Lojistik + min 4 yıl depo deneyimi, WMS/ERP zorunlu."},
+  {client:"Pneutec by Aalberts", title:"Assembly Worker", loc:"Vessem", hours:"36-40h/hafta, 2 vardiya", pay:"€2.500–€3.000 brüt/ay + %16 prim", notes:"Temiz oda montajı, MBO teknik veya montaj deneyimi."},
+  {client:"Snack Connection", title:"Shift Supervisor Productie", loc:"Bergschenhoek", hours:"40h/hafta, 2 vardiya", pay:"€3.500–€4.850 brüt/ay (%14 prim dahil)", notes:"Hollandaca VE İngilizce, liderlik deneyimi, BHV sertifikası."},
+  {client:"VDL ETG Technology & Development", title:"Lead Mechanical Engineer", loc:"Eindhoven", hours:"belirtilmemiş", pay:"€5.500–€6.300 brüt/ay", notes:"Min 5 yıl high-tech deneyim, Siemens NX/Teamcenter, ekip liderliği."},
+  {client:"VDL ETG Technology & Development", title:"Mechanical System Architect", loc:"Eindhoven", hours:"belirtilmemiş", pay:"€5.800–€6.900 brüt/ay", notes:"Master derece, min 5 yıl high-tech/yarı iletken, Hollandaca VE İngilizce."},
+  {client:"Lamers by Aalberts", title:"Quality / Measurement Technician", loc:"Nijmegen", hours:"Tam zamanlı, 2 vardiya", pay:"€17,00–€21,00 brüt/saat + %16 prim", notes:"Kalite kontrol, teknik çizim okuma, min B1 Hollandaca veya İngilizce."},
+  {client:"Lamers by Aalberts", title:"Cleanroom / Assembly Technician", loc:"Nijmegen", hours:"Tam zamanlı, 2 vardiya", pay:"€17,00–€21,00 brüt/saat + %16 prim", notes:"Paslanmaz çelik boru montajı, temiz oda tercih, min B1."},
+  {client:"Lamers by Aalberts", title:"TIG / Orbital Welder", loc:"Nijmegen", hours:"Tam zamanlı, 2 vardiya", pay:"€17,00–€21,00 brüt/saat + %16 prim", notes:"TIG/orbital kaynak, ince cidarlı paslanmaz çelik boru deneyimi."},
+  {client:"Lamers by Aalberts", title:"Metal Production / Machine Operator", loc:"Nijmegen", hours:"Tam zamanlı, 2 vardiya", pay:"€17,00–€21,00 brüt/saat + %16 prim", notes:"Kesme/bükme/parlatma, paslanmaz çelik deneyimi tercih."},
+  {client:"Lamers by Aalberts", title:"Cleanroom Production Employee", loc:"Nijmegen", hours:"Tam zamanlı, 2 vardiya", pay:"€17,00–€21,00 brüt/saat + %16 prim", notes:"Temiz oda üretim/paketleme, teknik yatkınlık ve öğrenme isteği."}
+];
+
+async function ensureClientsSeeded(){
+  const snap = await getDoc(doc(db,'appdata','clients'));
+  if(!snap.exists()){ await saveList('clients', DEFAULT_CLIENTS); }
+}
+
+async function logActivity(type, detail){
+  activityLog.unshift({type, user: currentUser ? (currentUser.username||currentUser.email) : '—', detail, at: nowStr()});
+  activityLog = activityLog.slice(0, 300);
+  await saveList('activityLog', activityLog);
+}
+
+/* ============ AUTH STATE ============ */
+onAuthStateChanged(auth, async (user) => {
+  if(user){
+    const profileSnap = await getDoc(doc(db,'users',user.uid));
+    const profile = profileSnap.exists() ? profileSnap.data() : { username:user.email, name:'', surname:'', email:user.email, phone:'', role:'Üye' };
+    await enterApp({ uid:user.uid, ...profile, email: profile.email || user.email });
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display = 'none';
+  }
+});
+
+async function enterApp(profile){
+  currentUser = profile;
+  await Promise.all([
+    ensureClientsSeeded(),
+  ]);
+  clients = await loadList('clients', DEFAULT_CLIENTS);
+  activityLog = await loadList('activityLog', []);
+  chatMessages = await loadList('chatMessages', []);
+  notifications = await loadList('notifications', []);
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('who').textContent = profile.name ? (profile.name+' '+(profile.surname||'')) : (profile.username||profile.email);
+  document.getElementById('role-badge').textContent = profile.role;
+  document.getElementById('btn-edit').style.display = profile.role === 'Yönetici' ? 'flex' : 'none';
+  document.getElementById('p-name').value = profile.name || '';
+  document.getElementById('p-surname').value = profile.surname || '';
+  document.getElementById('p-phone').value = profile.phone || '';
+  document.getElementById('p-email').value = profile.email || '';
+  renderClients();
+  renderChat();
+}
+
+/* ============ LOGIN / REGISTER ============ */
+document.getElementById('login-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const email = document.getElementById('user').value.trim();
+  const pw = document.getElementById('pass').value;
+  const err = document.getElementById('login-error');
+  err.style.display = 'none';
+  try{
+    await setPersistence(auth, document.getElementById('remember').checked ? browserLocalPersistence : browserSessionPersistence);
+    await signInWithEmailAndPassword(auth, email, pw);
+    // onAuthStateChanged tetiklenip enterApp() çağıracak
+  }catch(ex){
+    err.textContent = 'E-posta veya şifre hatalı.';
+    err.style.display = 'block';
+  }
+});
+
+document.getElementById('go-register').addEventListener('click', ()=>{
+  document.getElementById('login-block').style.display = 'none';
+  document.getElementById('register-block').style.display = 'block';
+});
+document.getElementById('go-login').addEventListener('click', ()=>{
+  document.getElementById('register-block').style.display = 'none';
+  document.getElementById('login-block').style.display = 'block';
+});
+
+document.getElementById('register-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const name = document.getElementById('r-name').value.trim();
+  const surname = document.getElementById('r-surname').value.trim();
+  const uname = document.getElementById('r-user').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const pw = document.getElementById('r-pass').value;
+  const err = document.getElementById('register-error');
+  err.style.display = 'none';
+  if(!name || !surname || !uname || !email || !pw){
+    err.textContent = 'Lütfen tüm alanları doldurun.'; err.style.display = 'block'; return;
+  }
+  try{
+    const cred = await createUserWithEmailAndPassword(auth, email, pw);
+    const profile = { username:uname, name, surname, email, phone:'', role:'Üye', createdAt: nowStr() };
+    await setDoc(doc(db,'users',cred.user.uid), profile);
+
+    const notifList = await loadList('notifications', []);
+    notifList.unshift({name, surname, username:uname, email, at: nowStr()});
+    await saveList('notifications', notifList);
+
+    // onAuthStateChanged otomatik enterApp() çağıracak; ardından log ekleyelim
+    setTimeout(()=> logActivity('register', `${name} ${surname} (${uname}) kayıt oldu`), 800);
+  }catch(ex){
+    err.textContent = ex.code === 'auth/email-already-in-use' ? 'Bu e-posta zaten kayıtlı.' : 'Kayıt sırasında bir hata oluştu: ' + ex.message;
+    err.style.display = 'block';
+  }
+});
+
+document.getElementById('btn-logout').addEventListener('click', async ()=>{
+  await signOut(auth);
+  currentUser = null;
+  document.getElementById('login-block').style.display = 'block';
+  document.getElementById('register-block').style.display = 'none';
+});
+
+/* ============ TOP-RIGHT NAV ============ */
+function showMainView(id){
+  ['view-clients','view-cv','view-profile','view-help','view-edit'].forEach(v=>{
+    document.getElementById(v).style.display = (v===id) ? 'block' : 'none';
+  });
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+}
+document.getElementById('btn-profile').addEventListener('click', ()=> showMainView('view-profile'));
+document.getElementById('btn-help').addEventListener('click', ()=> showMainView('view-help'));
+
+document.getElementById('save-profile').addEventListener('click', async ()=>{
+  currentUser.name = document.getElementById('p-name').value.trim();
+  currentUser.surname = document.getElementById('p-surname').value.trim();
+  currentUser.phone = document.getElementById('p-phone').value.trim();
+  currentUser.email = document.getElementById('p-email').value.trim();
+  await setDoc(doc(db,'users',currentUser.uid), {
+    username: currentUser.username, name: currentUser.name, surname: currentUser.surname,
+    email: currentUser.email, phone: currentUser.phone, role: currentUser.role,
+    createdAt: currentUser.createdAt || nowStr()
+  });
+  document.getElementById('who').textContent = currentUser.name + ' ' + currentUser.surname;
+  const ok = document.getElementById('profile-ok');
+  ok.style.display = 'block';
+  setTimeout(()=> ok.style.display='none', 2000);
+});
+
+/* ============ SIDEBAR NAV ============ */
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+    const view = item.dataset.view;
+    showMainView(view === 'clients' ? 'view-clients' : 'view-cv');
+  });
+});
+
+/* ============ EDIT (ADMIN) GATE ============ */
+const gateBackdrop = document.getElementById('gate-backdrop');
+document.getElementById('btn-edit').addEventListener('click', ()=>{
+  document.getElementById('gate-pass').value = '';
+  document.getElementById('gate-error').style.display = 'none';
+  gateBackdrop.classList.add('open');
+});
+document.getElementById('gate-cancel').addEventListener('click', ()=> gateBackdrop.classList.remove('open'));
+document.getElementById('gate-confirm').addEventListener('click', async ()=>{
+  const val = document.getElementById('gate-pass').value;
+  if(val === 'gokay830'){
+    gateBackdrop.classList.remove('open');
+    users = await loadAllUsers();
+    showMainView('view-edit');
+    renderMembers(); renderLogins(); renderLogs(); renderNotifications();
+  } else {
+    document.getElementById('gate-error').style.display = 'block';
+  }
+});
+
+document.querySelectorAll('.subtab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.subtab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    ['members','logins','logs','notif'].forEach(k=>{
+      document.getElementById('etab-'+k).style.display = (k===t.dataset.etab) ? 'block' : 'none';
+    });
+  });
+});
+
+const ROLES = ['Yönetici','Admin','Designer','Üye'];
+function renderMembers(){
+  const wrap = document.getElementById('etab-members');
+  let html = '<table class="data-table"><tr><th>Ad Soyad</th><th>Kullanıcı adı</th><th>E-posta</th><th>Telefon</th><th>Rol</th><th></th></tr>';
+  users.forEach((u,i)=>{
+    html += `<tr>
+      <td>${(u.name||'')+' '+(u.surname||'')}</td>
+      <td>${u.username||'—'}</td>
+      <td>${u.email||'—'}</td>
+      <td>${u.phone||'—'}</td>
+      <td><select data-idx="${i}" class="role-select">${ROLES.map(r=>`<option ${r===u.role?'selected':''}>${r}</option>`).join('')}</select></td>
+      <td><button class="btn-danger" data-del="${i}">Üyeliği Sil</button></td>
+    </tr>`;
+  });
+  html += '</table>';
+  html += '<p style="color:var(--text-muted); font-size:12px; margin-top:12px;">Not: "Üyeliği Sil" bu kişinin uygulama profilini kaldırır; Firebase Authentication hesabı tamamen silmek için Firebase konsolundan manuel silme gerekir.</p>';
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('.role-select').forEach(sel=>{
+    sel.addEventListener('change', async ()=>{
+      const idx = +sel.dataset.idx;
+      const old = users[idx].role;
+      users[idx].role = sel.value;
+      await setDoc(doc(db,'users',users[idx].uid), { ...users[idx] });
+      await logActivity('role_change', `${users[idx].username||users[idx].email}: ${old} → ${sel.value}`);
+      if(currentUser.uid === users[idx].uid){ currentUser.role = sel.value; document.getElementById('role-badge').textContent = sel.value; document.getElementById('btn-edit').style.display = sel.value==='Yönetici'?'flex':'none'; }
+    });
+  });
+  wrap.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const idx = +btn.dataset.del;
+      const target = users[idx];
+      if(!confirm((target.username||target.email) + ' profilini silmek istediğinize emin misiniz?')) return;
+      await deleteDoc(doc(db,'users',target.uid));
+      users.splice(idx,1);
+      await logActivity('user_delete', `${target.username||target.email} profili silindi`);
+      renderMembers();
+    });
+  });
+}
+function renderLogins(){
+  const wrap = document.getElementById('etab-logins');
+  const loginEvents = activityLog.filter(l => l.type === 'login');
+  let html = '<table class="data-table"><tr><th>Tarih/Saat</th><th>Hesap</th><th>Detay</th></tr>';
+  loginEvents.forEach(l=>{ html += `<tr><td>${l.at}</td><td>${l.user}</td><td>${l.detail}</td></tr>`; });
+  html += '</table>';
+  wrap.innerHTML = loginEvents.length ? html : '<p style="color:var(--text-muted);">Henüz giriş kaydı yok.</p>';
+}
+function renderLogs(){
+  const wrap = document.getElementById('etab-logs');
+  let html = '<table class="data-table"><tr><th>Tarih/Saat</th><th>Kullanıcı</th><th>Tür</th><th>Detay</th></tr>';
+  activityLog.forEach(l=>{ html += `<tr><td>${l.at}</td><td>${l.user}</td><td>${l.type}</td><td>${l.detail}</td></tr>`; });
+  html += '</table>';
+  wrap.innerHTML = html || '<p style="color:var(--text-muted);">Henüz log yok.</p>';
+}
+function renderNotifications(){
+  const wrap = document.getElementById('etab-notif');
+  let html = '<p style="color:var(--text-muted); font-size:12.5px; margin-bottom:14px;">Not: gerçek e-posta gönderimi ayrı bir servis (örn. Resend/SendGrid) bağlanmadan çalışmaz; şimdilik her kayıt burada listeleniyor.</p>';
+  html += '<table class="data-table"><tr><th>Tarih/Saat</th><th>Ad Soyad</th><th>Kullanıcı adı</th><th>E-posta</th></tr>';
+  notifications.forEach(n=>{ html += `<tr><td>${n.at}</td><td>${n.name} ${n.surname}</td><td>${n.username}</td><td>${n.email}</td></tr>`; });
+  html += '</table>';
+  wrap.innerHTML = html;
+}
+
+/* ============ CLIENT LIST ============ */
+function isYonetici(){ return currentUser && currentUser.role === 'Yönetici'; }
+
+function renderClients(){
+  document.getElementById('open-add-client').style.display = isYonetici() ? 'inline-block' : 'none';
+  const wrap = document.getElementById('client-list');
+  wrap.innerHTML = '';
+  const grouped = {};
+  clients.forEach((c,i) => { c._idx = i; if(!grouped[c.client]) grouped[c.client] = []; grouped[c.client].push(c); });
+  document.getElementById('client-sub').textContent = clients.length + ' açık pozisyon · ' + Object.keys(grouped).length + ' client';
+
+  Object.keys(grouped).forEach((clientName, gi) => {
+    const group = document.createElement('div');
+    group.className = 'client-group';
+    const head = document.createElement('div');
+    head.className = 'client-group-head';
+    head.innerHTML = `<div class="name">${clientName}</div><div style="display:flex;align-items:center;gap:10px;"><span class="count">${grouped[clientName].length} pozisyon</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>`;
+    head.addEventListener('click', ()=> group.classList.toggle('open'));
+    group.appendChild(head);
+
+    const positions = document.createElement('div');
+    positions.className = 'positions';
+    grouped[clientName].forEach((p, idx) => {
+      const row = document.createElement('div');
+      row.className = 'position-row';
+      const detailId = 'detail-' + gi + '-' + idx;
+      row.innerHTML = `
+        <div class="title">${p.title}</div>
+        <div class="loc">${p.loc}</div>
+        <div class="pay">${p.pay}</div>
+        <button class="expand-btn" data-target="${detailId}">detay</button>
+        ${isYonetici() ? `<button class="btn-danger" data-remove="${p._idx}">Sil</button>` : '<span></span>'}
+      `;
+      positions.appendChild(row);
+      const detail = document.createElement('div');
+      detail.className = 'position-detail';
+      detail.id = detailId;
+      detail.innerHTML = `<strong>Saatler:</strong> ${p.hours}<br><strong>Notlar:</strong> ${p.notes}`;
+      positions.appendChild(detail);
+      row.querySelector('.expand-btn').addEventListener('click', (e)=>{ e.stopPropagation(); detail.classList.toggle('open'); });
+      const rm = row.querySelector('[data-remove]');
+      if(rm){
+        rm.addEventListener('click', async (e)=>{
+          e.stopPropagation();
+          const i = +rm.dataset.remove;
+          const removed = clients[i];
+          if(!confirm(`${removed.client} — ${removed.title} silinsin mi?`)) return;
+          clients.splice(i,1);
+          await saveList('clients', clients);
+          await logActivity('client_delete', `${removed.client} — ${removed.title}`);
+          renderClients();
+        });
+      }
+    });
+    group.appendChild(positions);
+    wrap.appendChild(group);
+  });
+}
+
+const backdrop = document.getElementById('modal-backdrop');
+document.getElementById('open-add-client').addEventListener('click', ()=> backdrop.classList.add('open'));
+document.getElementById('m-cancel').addEventListener('click', ()=> backdrop.classList.remove('open'));
+document.getElementById('m-save').addEventListener('click', async ()=>{
+  if(!isYonetici()) return;
+  const clientName = document.getElementById('m-client').value.trim();
+  const title = document.getElementById('m-title').value.trim();
+  if(!clientName || !title) return;
+  const entry = {
+    client: clientName, title: title,
+    loc: document.getElementById('m-loc').value.trim() || 'belirtilmemiş',
+    hours: document.getElementById('m-hours').value.trim() || 'belirtilmemiş',
+    pay: document.getElementById('m-pay').value.trim() || 'belirtilmemiş',
+    notes: document.getElementById('m-notes').value.trim() || '—'
+  };
+  clients.push(entry);
+  await saveList('clients', clients);
+  await logActivity('client_add', `${clientName} — ${title}`);
+  renderClients();
+  ['m-client','m-title','m-loc','m-hours','m-pay','m-notes'].forEach(id => document.getElementById(id).value = '');
+  backdrop.classList.remove('open');
+});
+
+/* ============ CV ANALYSIS (kendi serverless fonksiyonumuz üzerinden) ============ */
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+dropzone.addEventListener('click', ()=> fileInput.click());
+dropzone.addEventListener('dragover', e=>{ e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', ()=> dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e=>{ e.preventDefault(); dropzone.classList.remove('drag'); if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e=>{ if(e.target.files.length) handleFile(e.target.files[0]); });
+
+/* --- Mod seçim kutucukları (Kural 3 & Kural 4) --- */
+const modeScan = document.getElementById('mode-scan');
+const modeSpecific = document.getElementById('mode-specific');
+const pickerWrap = document.getElementById('client-picker-wrap');
+const pickerBox = document.getElementById('client-picker');
+let selectedClientIdx = null;
+
+function renderClientPicker(){
+  pickerBox.innerHTML = '';
+  clients.forEach((c,i)=>{
+    const row = document.createElement('div');
+    row.className = 'client-picker-item' + (selectedClientIdx===i ? ' selected' : '');
+    row.innerHTML = `<div class="cp-client">${c.client}</div><div class="cp-title">${c.title} — ${c.loc}</div>`;
+    row.addEventListener('click', ()=>{
+      selectedClientIdx = i;
+      renderClientPicker();
+    });
+    pickerBox.appendChild(row);
+  });
+}
+
+modeScan.addEventListener('change', ()=>{
+  if(modeScan.checked){ modeSpecific.checked = false; pickerWrap.style.display = 'none'; }
+});
+modeSpecific.addEventListener('change', ()=>{
+  if(modeSpecific.checked){
+    modeScan.checked = false;
+    pickerWrap.style.display = 'block';
+    selectedClientIdx = null;
+    renderClientPicker();
+  } else {
+    pickerWrap.style.display = 'none';
+  }
+});
+
+function fileToBase64(file){
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(r.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+const FORMAT_RULE = `BİÇİM KURALI: Kısa ve öz yaz, gereksiz uzatma. Markdown TABLO kullanma (| işaretli satırlar yasak). "- " ile başlayan madde işaretli listeler kullan, önemli terimleri **kalın** yaz. Tüm çıktı TÜRKÇE. CV'de belirtilmeyen bilgi için "CV'de belirtilmemiş" yaz, tahmin yürütme.`;
+const CONTACT_RULE = `Her cevabın en başında ## İletişim Bilgileri başlığı altında CV'den bulduğun e-posta, telefon ve adres bilgilerini madde madde ver.`;
+
+function buildPrompt(mode){
+  const clientText = clients.map((c,i)=> `${i+1}. ${c.client} — ${c.title} (${c.loc}) — ${c.hours} — ${c.pay} — ${c.notes}`).join('\n');
+
+  if(mode === 'scan'){
+    // Kural 3: tüm clientları tara, en iyi eşleşmeyi artı/eksileriyle ve puanla göster
+    return `Sen Carriere işe alım ajansında çalışan bir recruitment asistanısın. Ekli CV'yi analiz et.
+${FORMAT_RULE}
+${CONTACT_RULE}
+Açık pozisyon listesi:
+${clientText}
+Tüm listeyi tara ve adayın EN UYGUN olduğu tek pozisyonu seç. Cevabında:
+## En Uygun Client
+Hangi client ve pozisyon olduğunu yaz.
+## Neden Uygun
+Sertifika, tecrübe, dil, ehliyet gibi somut sebeplerle kısaca açıkla (artıları).
+## Eksikler / Dikkat Edilmesi Gerekenler
+Varsa eksik/riskli noktaları kısaca listele.
+## Uygunluk Puanı
+%100 üzerinden tek bir puan ver.`;
+  }
+
+  if(mode === 'specific'){
+    // Kural 4: sadece seçilen tek pozisyona karşı direkt uygunluk kontrolü, detaylı gerekçeli
+    const c = clients[selectedClientIdx];
+    const target = `${c.client} — ${c.title} (${c.loc}) — ${c.hours} — ${c.pay} — ${c.notes}`;
+    return `Sen Carriere işe alım ajansında çalışan bir recruitment asistanısın. Ekli CV'yi analiz et.
+${FORMAT_RULE}
+${CONTACT_RULE}
+Değerlendirilecek TEK pozisyon:
+${target}
+Cevabında:
+## Bu Pozisyona Uygun mu?
+Net bir şekilde "Uygun" ya da "Uygun Değil" de.
+## Gerekçe
+Pozisyonun aradığı somut gereksinimleri (sertifika, tecrübe alanı, dil, ehliyet vb.) tek tek CV'deki karşılıklarıyla kıyasla:
+- Adayda VAR olan ve pozisyonun istediğiyle örtüşen somut şeyleri isim vererek belirt (hangi sertifika/deneyim/dil, neden client'ın istediğiyle örtüşüyor).
+- Adayda EKSİK olan noktaları da isim vererek belirt.
+- Bir eksiklik varsa, client'ın notlarında bu şart için esneklik/istisna belirtilip belirtilmediğini kontrol et (örn. "deneyim şart değil", "eğitim veriliyor" gibi ifadeler) — belirtilmişse bunun eksikliği ne ölçüde telafi ettiğini söyle, belirtilmemişse eksikliğin ciddiyetini vurgula.
+- Adayın deneyimi farklı bir meslek/sektörden geliyorsa bunu açıkça söyle ve pozisyonla ne kadar örtüştüğünü/örtüşmediğini değerlendir.
+Kısa ve öz tut, madde başına 1-2 cümle, gereksiz uzatma.`;
+  }
+
+  // Kural 3: tüm clientları tara, en iyi eşleşmeyi artı/eksileriyle ve puanla göster
+  return `Sen Carriere işe alım ajansında çalışan bir recruitment asistanısın. Ekli CV'yi analiz et.
+${FORMAT_RULE}
+${CONTACT_RULE}
+Açık pozisyon listesi:
+${clientText}
+Tüm listeyi tara ve adayın EN UYGUN olduğu tek pozisyonu seç. Cevabında:
+## En Uygun Client
+Hangi client ve pozisyon olduğunu yaz.
+## Neden Uygun
+Sertifika, tecrübe, dil, ehliyet gibi somut sebeplerle kısaca açıkla (artıları).
+## Eksikler / Dikkat Edilmesi Gerekenler
+Varsa eksik/riskli noktaları kısaca listele.
+## Uygunluk Puanı
+%100 üzerinden tek bir puan ver.`;
+}
+
+function simpleMarkdownToHtml(md){
+  let html = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^\- (.*$)/gim, '<li>$1</li>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+  html = html.replace(/(<li>.*?<\/li>)/gs, m => '<ul>' + m + '</ul>').replace(/<\/ul>\s*<ul>/g, '');
+  return '<p>' + html + '</p>';
+}
+async function handleFile(file){
+  if(file.type !== 'application/pdf'){ showError('Sadece PDF dosyaları desteklenir.'); return; }
+  const mode = modeScan.checked ? 'scan' : (modeSpecific.checked ? 'specific' : null);
+  if(!mode){
+    showError('Lütfen önce yukarıdaki iki seçenekten birini işaretleyin.');
+    return;
+  }
+  if(mode === 'specific' && selectedClientIdx === null){
+    showError('Lütfen önce yukarıdaki listeden bir pozisyon seçin.');
+    return;
+  }
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('report').style.display = 'none';
+  document.getElementById('analyzing').style.display = 'flex';
+  try{
+    const base64 = await fileToBase64(file);
+    const response = await fetch("/api/analyze-cv", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileBase64: base64, prompt: buildPrompt(mode) })
+    });
+    const data = await response.json();
+    if(!response.ok) throw new Error(data.error || 'Sunucu hatası');
+    const text = data.text;
+    if(!text) throw new Error('Boş yanıt döndü.');
+    document.getElementById('report').innerHTML = simpleMarkdownToHtml(text);
+    document.getElementById('report').style.display = 'block';
+    await logActivity('cv_upload', `${file.name} yüklendi (${mode}) ve analiz edildi`);
+  }catch(e){
+    console.error(e);
+    showError('Analiz sırasında bir hata oluştu: ' + e.message);
+  }finally{
+    document.getElementById('analyzing').style.display = 'none';
+    fileInput.value = '';
+  }
+}
+function showError(msg){ const box = document.getElementById('error-box'); box.textContent = msg; box.style.display = 'block'; }
+
+
+/* ============ CHAT WIDGET ============ */
+const chatToggle = document.getElementById('chat-toggle');
+const chatPanel = document.getElementById('chat-panel');
+let chatPollTimer = null;
+chatToggle.addEventListener('click', ()=>{
+  chatPanel.classList.toggle('open');
+  if(chatPanel.classList.contains('open')){
+    renderChat();
+    chatPollTimer = setInterval(async ()=>{ chatMessages = await loadList('chatMessages', chatMessages); renderChat(); }, 4000);
+  } else {
+    clearInterval(chatPollTimer);
+  }
+});
+function renderChat(){
+  const wrap = document.getElementById('chat-messages');
+  wrap.innerHTML = '';
+  chatMessages.forEach(m=>{
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    div.innerHTML = `<span class="who">${m.name}</span>${m.message}<span class="when">${m.at}</span>`;
+    wrap.appendChild(div);
+  });
+  wrap.scrollTop = wrap.scrollHeight;
+}
+async function sendChat(){
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if(!msg || !currentUser) return;
+  const displayName = currentUser.name ? (currentUser.name+' '+(currentUser.surname||'')) : (currentUser.username||currentUser.email);
+  chatMessages.push({ name: displayName, message: msg, at: nowStr() });
+  await saveList('chatMessages', chatMessages);
+  input.value = '';
+  renderChat();
+}
+document.getElementById('chat-send').addEventListener('click', sendChat);
+document.getElementById('chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
+</script>
+</body>
+</html>
