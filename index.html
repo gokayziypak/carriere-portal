@@ -178,6 +178,9 @@
   .btn-pending:hover{border-color:var(--danger); color:var(--danger);}
   .btn-pending.active{background:rgba(224,120,90,.15); color:var(--danger); border-color:var(--danger);}
   .pending-badge{display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:var(--danger); color:#fff; font-size:11px; font-weight:700; cursor:help; vertical-align:middle;}
+  .status-badge{display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 9px; border-radius:20px; cursor:default;}
+  .status-badge.approved{background:rgba(143,208,160,.15); color:var(--ok); border:1px solid rgba(143,208,160,.35);}
+  .status-badge.pending{background:rgba(224,120,90,.15); color:var(--danger); border:1px solid rgba(224,120,90,.35);}
   .btn-danger:hover{background:rgba(224,120,90,.1);}
 
   /* client list */
@@ -362,6 +365,10 @@
           <div class="field"><label>Kullanıcı adı</label><input type="text" id="r-user"></div>
           <div class="field"><label>E-posta</label><input type="email" id="r-email"></div>
           <div class="field"><label>Şifre</label><input type="password" id="r-pass"></div>
+          <div style="position:absolute; left:-9999px; opacity:0; height:0; overflow:hidden;" aria-hidden="true">
+            <label for="r-website">Website</label>
+            <input type="text" id="r-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
           <div class="error-msg" id="register-error"></div>
           <div class="ok-msg" id="register-ok"></div>
           <button type="submit" class="btn btn-primary">Kayıt Ol</button>
@@ -588,6 +595,24 @@
       <div class="modal-actions">
         <button class="btn btn-secondary" id="g-cancel">Vazgeç</button>
         <button class="btn btn-primary" style="width:auto;" id="g-save">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPROVAL STATUS MODAL -->
+  <div class="modal-backdrop" id="approval-modal-backdrop">
+    <div class="modal">
+      <h3>Onay Durumu Belirt</h3>
+      <div id="approval-modal-group-name" style="color:var(--gold-bright); font-size:14px; margin-bottom:14px;"></div>
+      <div class="field">
+        <label>Hangi hesabın durumunu belirtiyorsun?</label>
+        <select id="approval-user-select" style="width:100%; background:rgba(5,4,3,.6); color:var(--text); border:1px solid var(--line); border-radius:9px; padding:11px 13px; font-family:'Space Grotesk',sans-serif; font-size:14px;"></select>
+      </div>
+      <div class="modal-actions" style="justify-content:flex-start; flex-wrap:wrap;">
+        <button class="btn btn-secondary" id="approval-cancel">Vazgeç</button>
+        <button class="btn" style="background:rgba(143,208,160,.15); color:var(--ok); border:1px solid rgba(143,208,160,.4); width:auto;" id="approval-set-approved">✅ Onaylandı</button>
+        <button class="btn" style="background:rgba(224,120,90,.15); color:var(--danger); border:1px solid rgba(224,120,90,.4); width:auto;" id="approval-set-pending">⏳ Onay Aşamasında</button>
+        <button class="btn btn-secondary" id="approval-clear">Durumu Temizle</button>
       </div>
     </div>
   </div>
@@ -822,6 +847,38 @@ tick();
 
 function nowStr(){ return new Date().toLocaleString('tr-TR'); }
 
+/* ============ GENEL SPAM ENGELLEYİCİ ============ */
+// 1) Tıklama/işlem hız sınırlayıcı: aynı işlem art arda çok hızlı tetiklenirse engeller.
+const _spamGuardLast = {};
+function isSpamming(key, cooldownMs = 1500){
+  const now = Date.now();
+  const last = _spamGuardLast[key] || 0;
+  if(now - last < cooldownMs) return true;
+  _spamGuardLast[key] = now;
+  return false;
+}
+
+// 2) localStorage tabanlı, sayfa yenilense de kalıcı deneme sayacı (örn. kayıt formu için).
+function rateLimitCheck(storageKey, maxAttempts, windowMs){
+  let attempts = [];
+  try{ attempts = JSON.parse(localStorage.getItem(storageKey) || '[]'); }catch(e){ attempts = []; }
+  const now = Date.now();
+  attempts = attempts.filter(t => now - t < windowMs);
+  if(attempts.length >= maxAttempts){
+    return { allowed:false, waitMs: windowMs - (now - attempts[0]) };
+  }
+  attempts.push(now);
+  try{ localStorage.setItem(storageKey, JSON.stringify(attempts)); }catch(e){}
+  return { allowed:true };
+}
+
+// 3) Honeypot kontrolü: gizli alan doluysa bot kabul edilir.
+function isHoneypotTriggered(fieldId){
+  const el = document.getElementById(fieldId);
+  return !!(el && el.value && el.value.trim().length > 0);
+}
+
+
 /* ============ FIRESTORE HELPERS (appdata/{id} = {list:[...]}) ============ */
 async function loadList(id, fallback){
   try{
@@ -1023,6 +1080,7 @@ async function enterApp(profile){
   notifications = await loadList('notifications', []);
   fbGroups = await loadList('fbGroups', []);
   shareLogs = await loadList('shareLogs', []);
+  await ensureUsersCache();
   criticalErrors = await loadList('criticalErrors', []);
   lastSeenChatCount = chatMessages.length;
 
@@ -1042,10 +1100,20 @@ async function enterApp(profile){
 /* ============ LOGIN / REGISTER ============ */
 document.getElementById('login-form').addEventListener('submit', async function(e){
   e.preventDefault();
-  const email = document.getElementById('user').value.trim();
-  const pw = document.getElementById('pass').value;
   const err = document.getElementById('login-error');
   err.style.display = 'none';
+
+  if(isSpamming('login-submit', 1200)) return;
+  const rl = rateLimitCheck('carriere_login_attempts', 8, 5*60*1000);
+  if(!rl.allowed){
+    const minutes = Math.ceil(rl.waitMs / 60000);
+    err.textContent = `Çok fazla başarısız/hızlı giriş denemesi. Lütfen ${minutes} dakika sonra tekrar dene.`;
+    err.style.display = 'block';
+    return;
+  }
+
+  const email = document.getElementById('user').value.trim();
+  const pw = document.getElementById('pass').value;
   try{
     pendingIntro = true;
     await setPersistence(auth, document.getElementById('remember').checked ? browserLocalPersistence : browserSessionPersistence);
@@ -1069,16 +1137,35 @@ document.getElementById('go-login').addEventListener('click', ()=>{
 
 document.getElementById('register-form').addEventListener('submit', async function(e){
   e.preventDefault();
+  const err = document.getElementById('register-error');
+  err.style.display = 'none';
+
+  // Bot tuzağı: gizli alan doluysa sessizce reddet (bota "başarılı" izlenimi vermeden durdur)
+  if(isHoneypotTriggered('r-website')){
+    err.textContent = 'Kayıt işlemi tamamlanamadı.'; err.style.display = 'block';
+    return;
+  }
+  // Aynı tarayıcıdan çok sık kayıt denemesi engeli: 10 dakikada en fazla 3 deneme
+  const rl = rateLimitCheck('carriere_register_attempts', 3, 10*60*1000);
+  if(!rl.allowed){
+    const minutes = Math.ceil(rl.waitMs / 60000);
+    err.textContent = `Çok fazla kayıt denemesi yapıldı. Lütfen ${minutes} dakika sonra tekrar dene.`;
+    err.style.display = 'block';
+    return;
+  }
+  // Aynı butona art arda hızlı tıklama engeli
+  if(isSpamming('register-submit', 2000)) return;
+
   const name = document.getElementById('r-name').value.trim();
   const surname = document.getElementById('r-surname').value.trim();
   const uname = document.getElementById('r-user').value.trim();
   const email = document.getElementById('r-email').value.trim();
   const pw = document.getElementById('r-pass').value;
-  const err = document.getElementById('register-error');
-  err.style.display = 'none';
   if(!name || !surname || !uname || !email || !pw){
     err.textContent = 'Lütfen tüm alanları doldurun.'; err.style.display = 'block'; return;
   }
+  const submitBtn = document.querySelector('#register-form button[type=submit]');
+  submitBtn.disabled = true;
   try{
     pendingIntro = true;
     const cred = await createUserWithEmailAndPassword(auth, email, pw);
@@ -1095,6 +1182,8 @@ document.getElementById('register-form').addEventListener('submit', async functi
     pendingIntro = false;
     err.textContent = ex.code === 'auth/email-already-in-use' ? 'Bu e-posta zaten kayıtlı.' : 'Kayıt sırasında bir hata oluştu: ' + ex.message;
     err.style.display = 'block';
+  }finally{
+    submitBtn.disabled = false;
   }
 });
 
@@ -1394,12 +1483,13 @@ function estimateMonthlyFromHourly(payStr, hoursStr){
   const monthlyVals = nums.map(n => Math.round(n * monthlyHours));
   const fmt = (n) => '€' + n.toLocaleString('nl-NL');
   const text = monthlyVals.length === 1
-    ? `${fmt(monthlyVals[0])} brüt/ay (haftalık ${weeklyHours} saat, ${monthlyHours} saat/ay üzerinden ortalama)`
-    : `${fmt(Math.min(...monthlyVals))}–${fmt(Math.max(...monthlyVals))} brüt/ay (haftalık ${weeklyHours} saat, ${monthlyHours} saat/ay üzerinden ortalama)`;
+    ? `${fmt(monthlyVals[0])} brüt/ay (haftalık ${weeklyHours} saat üzerinden ortalama)`
+    : `${fmt(Math.min(...monthlyVals))}–${fmt(Math.max(...monthlyVals))} brüt/ay (haftalık ${weeklyHours} saat üzerinden ortalama)`;
   return { weeklyHours, monthlyHours, text };
 }
 
 async function generateSocialPost(client){
+  if(isSpamming('generate-social-post', 3000)) return;
   socialSelectedClient = client;
   socialShowStep('pick');
   document.getElementById('social-analyzing').style.display = 'flex';
@@ -1480,36 +1570,41 @@ function renderFbGroupPicker(){
     const row = document.createElement('div');
     row.className = 'client-picker-item';
     row.style.display = 'flex';
-    row.style.alignItems = 'center';
-    row.style.gap = '10px';
-    if(g.pendingApproval){ row.style.borderLeft = '3px solid var(--danger)'; }
+    row.style.flexDirection = 'column';
+    row.style.gap = '8px';
     const metaBits = [];
     if(g.members) metaBits.push(`👤 ${g.members} üye`);
     if(g.activity) metaBits.push(g.activity);
     const meta = metaBits.length ? metaBits.join(' &middot; ') : g.url;
-    const pendingBadge = g.pendingApproval
-      ? `<span class="pending-badge" title="Gönderi onay aşamasında — bu grupta paylaşımlar yönetici onayı bekliyor, henüz yayınlanmamış olabilir.">!</span>`
-      : '';
+
+    const statusMap = g.approvalStatus || {};
+    const statusBadges = Object.keys(statusMap).map(uname=>{
+      const st = statusMap[uname];
+      const displayName = (userDisplayNames[uname] || uname);
+      return st === 'approved'
+        ? `<span class="status-badge approved" title="${displayName}: Onaylandı">✅ ${displayName}</span>`
+        : `<span class="status-badge pending" title="${displayName}: Onay Aşamasında">⏳ ${displayName}</span>`;
+    }).join(' ');
+
     row.innerHTML = `
-      <input type="checkbox" class="fb-group-check" data-idx="${g._idx}" style="width:15px; height:15px; accent-color:var(--gold); flex:0 0 auto;">
-      <div style="flex:1;">
-        <div class="cp-client">${g.name} ${pendingBadge}</div>
-        <div class="cp-title">${meta}</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input type="checkbox" class="fb-group-check" data-idx="${g._idx}" style="width:15px; height:15px; accent-color:var(--gold); flex:0 0 auto;">
+        <div style="flex:1;">
+          <div class="cp-client">${g.name}</div>
+          <div class="cp-title">${meta}</div>
+        </div>
+        <button class="btn-secondary" style="font-size:12px; padding:6px 10px;" data-statusgroup="${g._idx}">Durum Belirt</button>
+        ${isYonetici() ? `<button class="btn-secondary" style="font-size:12px; padding:6px 10px;" data-editgroup="${g._idx}">Düzenle</button>` : ''}
+        ${isYonetici() ? `<button class="btn-danger" data-delgroup="${g._idx}">Sil</button>` : ''}
       </div>
-      <button class="btn-pending${g.pendingApproval ? ' active' : ''}" data-pending="${g._idx}" title="Onay bekliyor olarak işaretle/kaldır">!</button>
-      ${isYonetici() ? `<button class="btn-secondary" style="font-size:12px; padding:6px 10px;" data-editgroup="${g._idx}">Düzenle</button>` : ''}
-      ${isYonetici() ? `<button class="btn-danger" data-delgroup="${g._idx}">Sil</button>` : ''}
+      ${statusBadges ? `<div style="padding-left:25px; display:flex; flex-wrap:wrap; gap:6px;">${statusBadges}</div>` : ''}
     `;
     box.appendChild(row);
   });
-  box.querySelectorAll('[data-pending]').forEach(btn=>{
+  box.querySelectorAll('[data-statusgroup]').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
       e.stopPropagation();
-      const i = +btn.dataset.pending;
-      fbGroups[i].pendingApproval = !fbGroups[i].pendingApproval;
-      await saveFbGroups();
-      await logActivity('fb_group_pending', `${fbGroups[i].name} — onay durumu: ${fbGroups[i].pendingApproval ? 'onay bekliyor' : 'temizlendi'}`);
-      renderFbGroupPicker();
+      await openApprovalModal(+btn.dataset.statusgroup);
     });
   });
   box.querySelectorAll('[data-editgroup]').forEach(btn=>{
@@ -1531,6 +1626,57 @@ function renderFbGroupPicker(){
     });
   });
 }
+
+/* ============ KULLANICI BAZLI ONAY DURUMU ============ */
+let allUsersCache = null;
+let userDisplayNames = {};
+async function ensureUsersCache(){
+  if(!allUsersCache){
+    allUsersCache = await loadAllUsers();
+    userDisplayNames = {};
+    allUsersCache.forEach(u=>{
+      const key = u.username || u.email;
+      userDisplayNames[key] = (u.name ? (u.name+' '+(u.surname||'')).trim() : (u.username||u.email));
+    });
+  }
+  return allUsersCache;
+}
+
+let approvalModalGroupIdx = null;
+const approvalBackdrop = document.getElementById('approval-modal-backdrop');
+
+async function openApprovalModal(idx){
+  approvalModalGroupIdx = idx;
+  const g = fbGroups[idx];
+  document.getElementById('approval-modal-group-name').textContent = g.name;
+  const users = await ensureUsersCache();
+  const sel = document.getElementById('approval-user-select');
+  sel.innerHTML = users.map(u=>{
+    const key = u.username || u.email;
+    return `<option value="${key}">${userDisplayNames[key]}</option>`;
+  }).join('');
+  const myKey = currentUser ? (currentUser.username || currentUser.email) : null;
+  if(myKey && [...sel.options].some(o=>o.value===myKey)){ sel.value = myKey; }
+  approvalBackdrop.classList.add('open');
+}
+
+async function setApprovalStatus(status){
+  if(approvalModalGroupIdx === null) return;
+  const uname = document.getElementById('approval-user-select').value;
+  const g = fbGroups[approvalModalGroupIdx];
+  if(!g.approvalStatus) g.approvalStatus = {};
+  if(status === null){ delete g.approvalStatus[uname]; }
+  else { g.approvalStatus[uname] = status; }
+  await saveFbGroups();
+  await logActivity('fb_group_status', `${g.name} — ${userDisplayNames[uname]||uname}: ${status === 'approved' ? 'Onaylandı' : status === 'pending' ? 'Onay Aşamasında' : 'durum temizlendi'}`);
+  renderFbGroupPicker();
+  approvalBackdrop.classList.remove('open');
+}
+
+document.getElementById('approval-cancel').addEventListener('click', ()=> approvalBackdrop.classList.remove('open'));
+document.getElementById('approval-set-approved').addEventListener('click', ()=> setApprovalStatus('approved'));
+document.getElementById('approval-set-pending').addEventListener('click', ()=> setApprovalStatus('pending'));
+document.getElementById('approval-clear').addEventListener('click', ()=> setApprovalStatus(null));
 
 let editingGroupIdx = null;
 const groupBackdrop = document.getElementById('group-modal-backdrop');
@@ -1620,6 +1766,7 @@ function renderFbLogsPanel(selectedMonth){
   months.forEach(m => { html += `<option value="${m}" ${m===month?'selected':''}>${monthLabel(m)}</option>`; });
   html += '</select>';
   html += '<button class="btn btn-ghost" id="fb-log-download" style="font-size:12px; padding:8px 12px;">İndir (CSV)</button>';
+  html += '<button class="btn-danger" id="fb-log-reset" style="font-size:12px; padding:8px 12px;">Sayaçları Sıfırla</button>';
   html += '</div></div>';
 
   const userNames = Object.keys(byUser).sort((a,b)=> byUser[b].total - byUser[a].total);
@@ -1645,6 +1792,14 @@ function renderFbLogsPanel(selectedMonth){
     renderFbLogsPanel(e.target.value);
   });
   document.getElementById('fb-log-download').addEventListener('click', downloadShareLogsCsv);
+  document.getElementById('fb-log-reset').addEventListener('click', async ()=>{
+    if(!confirm('Tüm paylaşım sayaçları ve geçmişi sıfırlanacak. Önce "İndir (CSV)" ile bir yedek almanı öneririm. Devam etmek istediğine emin misin?')) return;
+    await downloadShareLogsCsv();
+    shareLogs = [];
+    await saveShareLogs();
+    await logActivity('fb_log_reset', 'Paylaşım logları sıfırlandı, sayım bugünden itibaren yeniden başladı');
+    renderFbLogsPanel();
+  });
 }
 
 function downloadShareLogsCsv(){
@@ -1675,6 +1830,7 @@ document.getElementById('open-fb-logs').addEventListener('click', ()=>{
 document.getElementById('fb-share-btn').addEventListener('click', async ()=>{
   const errBox = document.getElementById('fb-share-error');
   errBox.style.display = 'none';
+  if(isSpamming('fb-share', 2500)) return;
   const checked = Array.from(document.querySelectorAll('.fb-group-check:checked'));
   if(!checked.length){
     errBox.textContent = 'Lütfen en az bir Facebook grubu seç.';
@@ -1998,6 +2154,7 @@ function finishLoadingScene(){
   });
 }
 async function handleFile(file){
+  if(isSpamming('cv-analyze', 3000)) return;
   const kind = detectKind(file);
   if(kind === 'unsupported'){ showError('Desteklenmeyen dosya türü. PDF, .docx veya .pptx yükleyin.'); return; }
   if(kind === 'legacy'){ showError('Eski .doc / .ppt formatları desteklenmiyor. Lütfen .docx / .pptx veya PDF olarak kaydedip tekrar deneyin.'); return; }
@@ -2092,6 +2249,7 @@ async function sendChat(){
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
   if(!msg || !currentUser) return;
+  if(isSpamming('chat-send', 1000)) return;
   const displayName = currentUser.name ? (currentUser.name+' '+(currentUser.surname||'')) : (currentUser.username||currentUser.email);
   chatMessages.push({ name: displayName, message: msg, at: nowStr() });
   await saveList('chatMessages', chatMessages);
