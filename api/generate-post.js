@@ -75,7 +75,7 @@ VARIABLE INFO SPECIFIC TO THIS POSTING (must appear at the very TOP of the text,
 FORMAT AND CONTENT RULES:
 1. Write a Facebook post that is neither too long nor too short (roughly 180-320 words).
 2. At the very TOP of the text, these three items MUST appear prominently (each bolded with **): Salary, Accommodation, Transport. This top block should be the most eye-catching part of the post.
-3. Right below that block: Position title - Company name - Address, on one line.
+3. Right below that block: Position title - Company name - Address, on one line, and bold (**) this entire line too, same as the salary/accommodation/transport lines.
 4. Then, under a "Working Hours" heading: number of shifts (single/2-shift), what time to what time, weekly/daily hours. Use the data on record; if incomplete, fill in with a reasonable, realistic assumption but do not invent specific numbers — use a general phrase instead (e.g. "day shift").
 5. Under a "Requirements" heading: list the requirements from the notes on record as bullet points. If information is missing, add reasonable, generally accepted requirements for this profession yourself (language level, technical skills, etc.), but keep them realistic and not exaggerated. When mentioning language level, do NOT use "basic/intermediate/advanced" — use the CEFR scale instead (e.g. "English level B1", "at least A2-B1 level English", using A1, A2, B1, B2, C1, C2).
 6. ALWAYS include this requirement (never skip it): "All candidates must be EU citizens OR hold a valid Dutch residence/work permit."
@@ -87,7 +87,7 @@ FORMAT AND CONTENT RULES:
 Email: g.ziypak@carriere.com
 Phone: +31 615086484
 You can reach us via WhatsApp or email."
-11. Bold (**) every occurrence of these terms/phrases, since they should stand out on Facebook: salary figures, "accommodation" mentions, "transport" mentions, working hours/shift phrases, and language level (A1-C2) mentions.
+11. Bold (**) every occurrence of these terms/phrases, since they should stand out on Facebook: salary figures (including the monthly estimate in parentheses, if present), "accommodation" mentions, "transport" mentions, working hours/shift phrases, language level (A1-C2) mentions, and the "Position - Company - Address" line.
 12. Use a simple, warm, professional tone. Emojis are fine but don't overdo it (1 emoji per heading is enough; no emoji in the closing sentence).
 13. Do not use markdown headings (#) — only **bold** and bullet points (-), keep it as plain flowing text since Facebook does not render markdown.`;
 
