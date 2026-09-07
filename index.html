@@ -539,11 +539,13 @@
               <div class="subtab" data-etab="logins">Giriş Kayıtları</div>
               <div class="subtab" data-etab="logs">Aktivite Logları</div>
               <div class="subtab" data-etab="notif">Kayıt Bildirimleri</div>
+              <div class="subtab" data-etab="critical">Critical Hatalar</div>
             </div>
             <div id="etab-members"></div>
             <div id="etab-logins" style="display:none;"></div>
             <div id="etab-logs" style="display:none;"></div>
             <div id="etab-notif" style="display:none;"></div>
+            <div id="etab-critical" style="display:none;"></div>
           </div>
 
         </div>
@@ -836,6 +838,7 @@ let activityLog = [];
 let chatMessages = [];
 let notifications = [];
 let fbGroups = [];
+let criticalErrors = [];
 let users = [];
 let currentUser = null; // {uid, username, name, surname, email, phone, role}
 
@@ -870,6 +873,21 @@ async function logActivity(type, detail){
   activityLog.unshift({type, user: currentUser ? (currentUser.username||currentUser.email) : '—', detail, at: nowStr()});
   activityLog = activityLog.slice(0, 300);
   await saveList('activityLog', activityLog);
+}
+
+/* ============ CRITICAL / VERIFIER HATA KAYDI ============ */
+async function recordCriticalError(source, description){
+  if(!description) return;
+  criticalErrors.unshift({
+    source, hata: description, duzeltme: 'Critical/Verifier zinciri tarafından otomatik düzeltildi',
+    user: currentUser ? (currentUser.username||currentUser.email) : '—', at: nowStr()
+  });
+  criticalErrors = criticalErrors.slice(0, 200);
+  await saveList('criticalErrors', criticalErrors);
+  await logActivity('critical_error', `[${source}] ${description}`);
+}
+function getKnownErrorsFor(source){
+  return criticalErrors.filter(e => e.source === source).slice(0, 15).map(e => ({ hata: e.hata, duzeltme: e.duzeltme }));
 }
 
 /* ============ SATÜRN'E YAKLAŞMA INTRO ANİMASYONU ============ */
@@ -995,6 +1013,7 @@ async function enterApp(profile){
   chatMessages = await loadList('chatMessages', []);
   notifications = await loadList('notifications', []);
   fbGroups = await loadList('fbGroups', []);
+  criticalErrors = await loadList('criticalErrors', []);
   lastSeenChatCount = chatMessages.length;
 
   document.getElementById('login-screen').style.display = 'none';
@@ -1127,7 +1146,7 @@ document.getElementById('gate-confirm').addEventListener('click', async ()=>{
     gateBackdrop.classList.remove('open');
     users = await loadAllUsers();
     showMainView('view-edit');
-    renderMembers(); renderLogins(); renderLogs(); renderNotifications();
+    renderMembers(); renderLogins(); renderLogs(); renderNotifications(); renderCriticalErrors();
   } else {
     document.getElementById('gate-error').style.display = 'block';
   }
@@ -1137,7 +1156,7 @@ document.querySelectorAll('.subtab').forEach(t=>{
   t.addEventListener('click', ()=>{
     document.querySelectorAll('.subtab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
-    ['members','logins','logs','notif'].forEach(k=>{
+    ['members','logins','logs','notif','critical'].forEach(k=>{
       document.getElementById('etab-'+k).style.display = (k===t.dataset.etab) ? 'block' : 'none';
     });
   });
@@ -1204,6 +1223,15 @@ function renderNotifications(){
   notifications.forEach(n=>{ html += `<tr><td>${n.at}</td><td>${n.name} ${n.surname}</td><td>${n.username}</td><td>${n.email}</td></tr>`; });
   html += '</table>';
   wrap.innerHTML = html;
+}
+
+function renderCriticalErrors(){
+  const wrap = document.getElementById('etab-critical');
+  let html = '<p style="color:var(--text-muted); font-size:12.5px; margin-bottom:14px;">"Critical" (Opus 5) botunun Analist (Sonnet 5) cevabında tespit edip düzelttiği hatalar. Bu liste her yeni işlemde otomatik olarak kontrol edilip aynı hatanın tekrarlanması önlenir.</p>';
+  html += '<table class="data-table"><tr><th>Tarih/Saat</th><th>Tür</th><th>Kullanıcı</th><th>Tespit Edilen Hata</th></tr>';
+  criticalErrors.forEach(e=>{ html += `<tr><td>${e.at}</td><td>${e.source}</td><td>${e.user}</td><td>${e.hata}</td></tr>`; });
+  html += '</table>';
+  wrap.innerHTML = criticalErrors.length ? html : '<p style="color:var(--text-muted);">Henüz kayıtlı bir Critical düzeltmesi yok.</p>';
 }
 
 /* ============ CLIENT LIST ============ */
@@ -1358,7 +1386,8 @@ async function generateSocialPost(client){
       notes: client.notes,
       salaryInfo: '',
       accommodationInfo: DEFAULT_ACCOMMODATION,
-      transportInfo: DEFAULT_TRANSPORT
+      transportInfo: DEFAULT_TRANSPORT,
+      knownErrors: getKnownErrorsFor('social_post')
     };
     const response = await fetch('/api/generate-post', {
       method: 'POST',
@@ -1371,6 +1400,9 @@ async function generateSocialPost(client){
     lastGeneratedRaw = data.text;
     document.getElementById('social-report').innerHTML = socialMarkdownToHtml(data.text);
     await logActivity('social_post', `${socialSelectedClient.client} — ${socialSelectedClient.title} için ilan metni oluşturuldu`);
+    if(data.pipeline && data.pipeline.errorFound){
+      await recordCriticalError('social_post', data.pipeline.errorDescription);
+    }
     renderFbGroupPicker();
     socialShowStep('result');
   }catch(e){
@@ -1783,13 +1815,14 @@ async function handleFile(file){
   startLoadingScene();
   try{
     let payload;
+    const knownErrors = getKnownErrorsFor('cv_analysis');
     if(kind === 'pdf'){
       const base64 = await fileToBase64(file);
-      payload = { fileBase64: base64, prompt: buildPrompt(mode) };
+      payload = { fileBase64: base64, prompt: buildPrompt(mode), knownErrors };
     } else {
       const extracted = kind === 'docx' ? await extractDocxText(file) : await extractPptxText(file);
       if(!extracted || !extracted.trim()) throw new Error('Dosyadan metin çıkarılamadı, dosya boş olabilir.');
-      payload = { cvText: extracted, prompt: buildPrompt(mode) };
+      payload = { cvText: extracted, prompt: buildPrompt(mode), knownErrors };
     }
     const fetchPromise = fetch("/api/analyze-cv", {
       method: "POST",
@@ -1805,6 +1838,9 @@ async function handleFile(file){
     document.getElementById('report').innerHTML = simpleMarkdownToHtml(text);
     document.getElementById('report').style.display = 'block';
     await logActivity('cv_upload', `${file.name} yüklendi (${mode}) ve analiz edildi`);
+    if(data.pipeline && data.pipeline.errorFound){
+      await recordCriticalError('cv_analysis', data.pipeline.errorDescription);
+    }
   }catch(e){
     console.error(e);
     await finishLoadingScene();
