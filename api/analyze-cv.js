@@ -1,3 +1,10 @@
+// Vercel Serverless Function
+// Bu dosya tarayıcıda değil, Vercel'in sunucusunda çalışır.
+// Anthropic API anahtarı (ANTHROPIC_API_KEY) sadece burada, ortam değişkeni olarak kullanılır
+// ve hiçbir zaman tarayıcıya/istemci koduna gönderilmez.
+// PDF dosyaları için doğrudan Anthropic 'document' bloğu kullanılır.
+// DOCX/PPTX dosyaları tarayıcı tarafında metne çevrilip 'cvText' olarak gönderilir.
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Sadece POST metodu desteklenir.' });
@@ -9,9 +16,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { fileBase64, prompt } = req.body;
-    if (!fileBase64 || !prompt) {
-      return res.status(400).json({ error: 'fileBase64 ve prompt alanları zorunludur.' });
+    const { fileBase64, cvText, prompt } = req.body;
+    if (!prompt || (!fileBase64 && !cvText)) {
+      return res.status(400).json({ error: 'prompt ve (fileBase64 veya cvText) alanlarından biri zorunludur.' });
+    }
+
+    let content;
+    if (fileBase64) {
+      content = [
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: fileBase64 } },
+        { type: 'text', text: prompt }
+      ];
+    } else {
+      content = [
+        { type: 'text', text: `${prompt}\n\n--- CV METNİ (dosyadan çıkarıldı) ---\n${cvText}` }
+      ];
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -23,14 +42,8 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-5',
-        max_tokens: 2000,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: fileBase64 } },
-            { type: 'text', text: prompt }
-          ]
-        }]
+        max_tokens: 1500,
+        messages: [{ role: 'user', content }]
       })
     });
 
