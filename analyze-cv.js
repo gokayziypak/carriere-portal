@@ -78,7 +78,7 @@ export default async function handler(req, res) {
 
     // ---- AŞAMA 1: Analist (Sonnet 5) ----
     const draftContent = buildCvContentBlocks(fileBase64, cvText, prompt);
-    const draft = await callClaude(apiKey, draftContent, 2200, 'claude-sonnet-5');
+    const draft = await callClaude(apiKey, draftContent, 4000, 'claude-sonnet-5');
 
     // ---- AŞAMA 2: Critical (Opus 5 — farklı model, bağımsız denetim) ----
     const criticInstruction = `Sen "Critical" adlı bağımsız bir denetim yapay zekasısın. Görevin, başka bir yapay zeka modelinin (Analist) ürettiği CV analizini kontrol etmek.
@@ -99,7 +99,7 @@ METIN:
 <hata yoksa Analist'in cevabını AYNEN tekrar yaz; hata varsa düzeltilmiş tam cevabı yaz (görev JSON istiyorsa SADECE JSON)>`;
 
     const criticContent = buildCvContentBlocks(fileBase64, cvText, criticInstruction);
-    const criticRaw = await callClaude(apiKey, criticContent, 2400, 'claude-opus-5');
+    const criticRaw = await callClaude(apiKey, criticContent, 4200, 'claude-opus-5');
     const critic = parseStructured(criticRaw, ['HATA_VAR', 'HATA_ACIKLAMASI']);
 
     const errorFound = (critic.HATA_VAR || '').toLowerCase().startsWith('evet');

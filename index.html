@@ -2028,7 +2028,7 @@ CV'de belirtilmeyen bilgi için uydurma yapma, "belirtilmemiş" kabul et.
 Açık pozisyon listesi:
 ${clientText}
 
-GÖREV: Tüm listeyi tara. Adayın %70 ve üzeri uyumlu olduğu TÜM pozisyonları bul (bir tane bile bulamazsan en yüksek puanlı 1 tanesini yine de dahil et). En yüksek puanlıyı "topMatch" yap, geri kalanları puana göre azalan sırayla "otherOptions" dizisine koy.
+GÖREV: Tüm listeyi tara. Adayın %70 ve üzeri uyumlu olduğu pozisyonları bul (bir tane bile bulamazsan en yüksek puanlı 1 tanesini yine de dahil et). En yüksek puanlıyı "topMatch" yap, geri kalanları puana göre azalan sırayla "otherOptions" dizisine koy. "otherOptions" dizisinde EN FAZLA 5 seçenek olsun (en yüksek puanlı ilk 5'i al, gerisini atla) — cevabın kesilmeden tamamlanabilmesi için bu sınıra kesinlikle uy.
 
 ÇIKTI KURALI: Cevabın SADECE aşağıdaki şemaya uyan geçerli bir JSON nesnesi olsun. Markdown, açıklama, kod bloğu işareti (\`\`\`) YOK — sadece ham JSON metni:
 {
@@ -2037,14 +2037,14 @@ GÖREV: Tüm listeyi tara. Adayın %70 ve üzeri uyumlu olduğu TÜM pozisyonlar
     "client": "<client adı>",
     "title": "<pozisyon adı>",
     "score": <0-100 arası tam sayı>,
-    "whySuitable": "<sertifika/tecrübe/dil/ehliyet gibi somut sebeplerle DETAYLI açıklama, birkaç cümle>",
-    "whyRisky": "<varsa eksik/riskli noktaların DETAYLI açıklaması, birkaç cümle; hiç risk yoksa 'Belirgin bir risk görünmüyor.' yaz>"
+    "whySuitable": "<sertifika/tecrübe/dil/ehliyet gibi somut sebeplerle açıklama, EN FAZLA 4 cümle>",
+    "whyRisky": "<varsa eksik/riskli noktaların açıklaması, EN FAZLA 4 cümle; hiç risk yoksa 'Belirgin bir risk görünmüyor.' yaz>"
   },
   "otherOptions": [
-    { "client": "<client adı>", "title": "<pozisyon adı>", "score": <sayı>, "shortReason": "<1-2 cümlelik kısa gerekçe>" }
+    { "client": "<client adı>", "title": "<pozisyon adı>", "score": <sayı>, "shortReason": "<EN FAZLA 2 cümlelik kısa gerekçe>" }
   ]
 }
-Sadece bu JSON'u döndür, başka hiçbir metin ekleme.`;
+ÖNEMLİ: Yanıtın kesinlikle tam ve geçerli JSON olarak bitmeli (son parantez dahil). Uzun açıklamalar yerine kısa ve öz cümleler kullan ki yanıt yarıda kesilmesin. Sadece bu JSON'u döndür, başka hiçbir metin ekleme.`;
   }
 
   if(mode === 'specific'){
@@ -2265,8 +2265,8 @@ function renderScanResult(rawText){
     data = JSON.parse(cleaned);
   }catch(e){
     console.error('JSON parse hatası', e, rawText);
-    box.innerHTML = simpleMarkdownToHtml(rawText); // yedek: ham metni göster
-    box.style.display = 'block';
+    showError('Sonuç işlenirken bir biçim hatası oluştu (yanıt yarıda kesilmiş olabilir). Lütfen "Best matching client" ile CV\'yi tekrar yükleyip deneyin.');
+    box.style.display = 'none';
     return;
   }
 
