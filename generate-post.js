@@ -119,9 +119,24 @@ METIN:
     const criticRaw = await callClaude(apiKey, [{ type: 'text', text: criticInstruction }], 1800, 'claude-opus-5');
     const critic = parseStructured(criticRaw);
 
-    const errorFound = (critic.HATA_VAR || '').toLowerCase().startsWith('evet');
-    const errorDescription = critic.HATA_ACIKLAMASI || '';
-    const text = critic.body || draft;
+    let aiErrorFound = (critic.HATA_VAR || '').toLowerCase().startsWith('evet');
+    let errorDescription = critic.HATA_ACIKLAMASI || '';
+    let text = critic.body || draft;
+
+    // ---- GÜVENCE KATMANI: İletişim bloğu asla yapay zekaya bırakılmaz, her zaman kod
+    // seviyesinde deterministik olarak eklenir. Böylece "iletişim bilgisi eksik geldi"
+    // hatası bir daha teknik olarak oluşamaz, model ne yazarsa yazsın.
+    const CONTACT_BLOCK = `📩 For more information:\nEmail: g.ziypak@carriere.com\nPhone: +31 615086484\nYou can reach us via WhatsApp or email.`;
+    const marker = '📩';
+    const markerIdx = text.indexOf(marker);
+    const hadCorrectBlock = markerIdx >= 0 && text.slice(markerIdx).replace(/\s+/g,' ').trim().includes('g.ziypak@carriere.com');
+    const bodyWithoutContact = (markerIdx >= 0 ? text.slice(0, markerIdx) : text).trim();
+    text = `${bodyWithoutContact}\n\n${CONTACT_BLOCK}`;
+
+    const errorFound = aiErrorFound || !hadCorrectBlock;
+    if(!hadCorrectBlock && !aiErrorFound){
+      errorDescription = errorDescription || 'İletişim bilgisi (e-posta/telefon) bloğu modelin çıktısında eksik veya hatalıydı; artık kod seviyesinde her zaman otomatik ekleniyor, bu hata bir daha oluşamaz.';
+    }
 
     return res.status(200).json({ text, pipeline: { errorFound, errorDescription } });
 
