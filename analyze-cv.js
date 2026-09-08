@@ -78,7 +78,7 @@ export default async function handler(req, res) {
 
     // ---- AŞAMA 1: Analist (Sonnet 5) ----
     const draftContent = buildCvContentBlocks(fileBase64, cvText, prompt);
-    const draft = await callClaude(apiKey, draftContent, 1600, 'claude-sonnet-5');
+    const draft = await callClaude(apiKey, draftContent, 2200, 'claude-sonnet-5');
 
     // ---- AŞAMA 2: Critical (Opus 5 — farklı model, bağımsız denetim) ----
     const criticInstruction = `Sen "Critical" adlı bağımsız bir denetim yapay zekasısın. Görevin, başka bir yapay zeka modelinin (Analist) ürettiği CV analizini kontrol etmek.
@@ -92,14 +92,14 @@ ${prompt}
 ANALİST'İN ÜRETTİĞİ CEVAP:
 ${draft}
 
-Şimdi ekli CV'ye bakarak bu cevabı satır satır denetle: CV'den doğru bilgi çekilmiş mi, uydurma/halüsinasyon bilgi var mı, pozisyon eşleştirmesi mantıklı mı, sayılar/tarihler doğru mu. Sadece şu formatta cevap ver, başka hiçbir şey yazma:
+Şimdi ekli CV'ye bakarak bu cevabı satır satır denetle: CV'den doğru bilgi çekilmiş mi, uydurma/halüsinasyon bilgi var mı, pozisyon eşleştirmesi mantıklı mı, sayılar/tarihler doğru mu, puanlar (score) tutarlı mı. EĞER Analist'in görev talimatı çıktının SADECE geçerli JSON olmasını istiyorsa: METIN alanına da SADECE geçerli, düzgün formatlı JSON yaz — markdown kod bloğu işareti (\`\`\`) veya JSON dışında hiçbir açıklama ekleme; JSON bozuksa/eksikse düzelt. Sadece şu formatta cevap ver, başka hiçbir şey yazma:
 HATA_VAR: evet/hayır
 HATA_ACIKLAMASI: <bulduğun hatayı kısa ve net, ileride tekrar yapılmaması için tarif et; hata yoksa boş bırak>
 METIN:
-<hata yoksa Analist'in cevabını AYNEN tekrar yaz; hata varsa düzeltilmiş tam cevabı yaz>`;
+<hata yoksa Analist'in cevabını AYNEN tekrar yaz; hata varsa düzeltilmiş tam cevabı yaz (görev JSON istiyorsa SADECE JSON)>`;
 
     const criticContent = buildCvContentBlocks(fileBase64, cvText, criticInstruction);
-    const criticRaw = await callClaude(apiKey, criticContent, 1800, 'claude-opus-5');
+    const criticRaw = await callClaude(apiKey, criticContent, 2400, 'claude-opus-5');
     const critic = parseStructured(criticRaw, ['HATA_VAR', 'HATA_ACIKLAMASI']);
 
     const errorFound = (critic.HATA_VAR || '').toLowerCase().startsWith('evet');
