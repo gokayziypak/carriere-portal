@@ -1,0 +1,2488 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carriere Service Center — Recruitment Ormi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Firebase config: kendi Firebase projenin değerleriyle değiştir (README.md içindeki talimatlara bak) -->
+<script>
+  window.FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCeNkoex2kXFk6U1z4kAVD3sT9W76myIzQ",
+    authDomain: "carriere-portal.firebaseapp.com",
+    projectId: "carriere-portal",
+    storageBucket: "carriere-portal.firebasestorage.app",
+    messagingSenderId: "750706023484",
+    appId: "1:750706023484:web:ddba50fe5e4c77c0a5b739"
+  };
+</script>
+<style>
+  :root{
+    --bg-deep:#050403;
+    --bg-panel:#12100a;
+    --bg-panel-2:#181409;
+    --line:#3a2f18;
+    --gold:#d4af37;
+    --gold-bright:#f5d9a0;
+    --gold-soft:#8a6a24;
+    --text:#f3ecd9;
+    --text-muted:#a89a76;
+    --danger:#e0785a;
+    --ok:#8fd0a0;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg-deep);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.serif{font-family:'Cormorant Garamond', serif; letter-spacing:.01em;}
+  a{color:var(--gold);}
+  canvas#sky{position:fixed; inset:0; width:100%; height:100%; z-index:0; display:block;}
+  #intro-canvas{position:fixed; inset:0; width:100%; height:100%; z-index:500; display:none; transition:opacity .3s ease;}
+
+  #loading-scene{
+    position:fixed; inset:0; z-index:400; display:none;
+    background:radial-gradient(ellipse at 62% 45%, rgba(30,22,10,.97), rgba(4,3,2,.99) 70%);
+    flex-direction:column; align-items:center; justify-content:center;
+    opacity:0; transition:opacity .5s ease;
+  }
+  #loading-scene.visible{display:flex;}
+  #loading-scene.show{opacity:1;}
+  #loading-svg{width:min(88vw,780px); height:auto;}
+  .loading-caption{margin-top:-10px; text-align:center; width:min(88vw,420px);}
+  .loading-title{font-family:'Cormorant Garamond', serif; font-size:24px; color:var(--gold-bright); letter-spacing:.03em;}
+  .loading-sub{font-size:12.5px; color:var(--text-muted); margin-top:4px; min-height:16px;}
+  .loading-bar-track{margin-top:14px; height:4px; border-radius:4px; background:rgba(212,175,55,.15); overflow:hidden;}
+  .loading-bar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--gold-soft), var(--gold-bright)); box-shadow:0 0 10px rgba(245,217,160,.6); transition:width .25s linear;}
+
+  .saturn{
+    position:fixed; top:4%; left:50%; width:560px; height:560px; z-index:1;
+    transform:translateX(-50%);
+    opacity:.42; pointer-events:none;
+    filter:drop-shadow(0 0 90px rgba(212,175,55,.28));
+  }
+  .saturn .ring-tilt{
+    position:absolute; top:50%; left:50%; width:172%; height:38%;
+    transform:translate(-50%,-50%) rotate(-16deg);
+  }
+  .saturn .ring-spin{
+    position:absolute; inset:0; border-radius:50%;
+    border:10px solid rgba(245,217,160,.55);
+    box-shadow:0 0 40px rgba(212,175,55,.5), inset 0 0 30px rgba(212,175,55,.3);
+    animation:ringspin 22s linear infinite;
+  }
+  .saturn .ring-spin.outer{
+    inset:-22px; border-width:5px; border-color:rgba(212,175,55,.25);
+    box-shadow:0 0 30px rgba(212,175,55,.3);
+    animation:ringspin 34s linear infinite reverse;
+  }
+  @keyframes ringspin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
+  .saturn .body{
+    position:absolute; inset:0; border-radius:50%;
+    background:
+      radial-gradient(circle at 32% 28%, #fdf0c8 0%, #f3d998 16%, #dcb355 38%, #b8862f 60%, #7a5a1e 82%, #402e0e 100%),
+      repeating-linear-gradient(100deg, rgba(0,0,0,.06) 0px, rgba(0,0,0,.06) 5px, transparent 5px, transparent 14px);
+    box-shadow:inset -30px -18px 60px rgba(0,0,0,.55), inset 14px 10px 40px rgba(255,236,180,.25);
+  }
+
+  .veil{
+    position:fixed; inset:0; z-index:2; pointer-events:none;
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(212,175,55,.08), transparent 55%),
+      radial-gradient(ellipse at 88% 85%, rgba(212,175,55,.06), transparent 50%);
+  }
+  .stage{position:relative; z-index:3; min-height:100vh;}
+
+  /* ---------- LOGIN / REGISTER ---------- */
+  #login-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .login-card{
+    width:100%; max-width:410px;
+    background:linear-gradient(180deg, rgba(24,20,9,.9), rgba(10,8,4,.92));
+    border:1px solid var(--line); border-radius:var(--radius);
+    padding:38px 34px 30px;
+    backdrop-filter:blur(6px);
+    box-shadow:0 0 0 1px rgba(212,175,55,.06), 0 30px 80px -20px rgba(0,0,0,.8), 0 0 60px -15px rgba(212,175,55,.18);
+  }
+  .brand-mark{display:flex; align-items:center; gap:10px; margin-bottom:22px;}
+  .brand-mark span{font-size:11px; letter-spacing:.1em; color:var(--text-muted); line-height:1.4;}
+  .login-card h1{font-size:30px; font-weight:600; margin:0 0 6px; color:var(--text);}
+  .login-card p.lead{margin:0 0 24px; color:var(--text-muted); font-size:13.5px; line-height:1.5;}
+  label{display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px;}
+  .field{margin-bottom:15px;}
+  input[type=text], input[type=password], input[type=email], input[type=tel]{
+    width:100%; background:rgba(5,4,3,.6); border:1px solid var(--line); border-radius:9px;
+    padding:11px 13px; color:var(--text); font-family:'Space Grotesk', sans-serif; font-size:14px;
+    outline:none; transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  input:focus{border-color:var(--gold); box-shadow:0 0 0 3px rgba(212,175,55,.16);}
+  .checkline{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-muted); margin:2px 0 4px;}
+  .checkline input{width:14px; height:14px; accent-color:var(--gold);}
+
+  .btn{appearance:none; border:none; cursor:pointer; font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14px; border-radius:9px; padding:12px 18px; transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{
+    width:100%; background:#0a0806; color:var(--gold-bright);
+    border:1px solid rgba(212,175,55,.55);
+    text-shadow:0 0 8px rgba(245,217,160,.85), 0 0 18px rgba(212,175,55,.45);
+    margin-top:4px;
+    animation:glowpulse 2.6s ease-in-out infinite;
+  }
+  @keyframes glowpulse{
+    0%,100%{box-shadow:0 0 10px rgba(212,175,55,.2);}
+    50%{box-shadow:0 0 26px rgba(212,175,55,.5);}
+  }
+  .switch-form{margin-top:16px; font-size:12.5px; color:var(--text-muted); text-align:center;}
+  .switch-form a{cursor:pointer; text-decoration:underline;}
+  .error-msg{color:var(--danger); font-size:12.5px; margin:-6px 0 14px; display:none;}
+  .ok-msg{color:var(--ok); font-size:12.5px; margin:-6px 0 14px; display:none;}
+
+  /* ---------- APP SHELL ---------- */
+  #app-screen{display:none; min-height:100vh;}
+  .shell{display:grid; grid-template-columns:230px 1fr; min-height:100vh;}
+  .sidebar{border-right:1px solid var(--line); background:rgba(9,7,3,.55); backdrop-filter:blur(4px); padding:26px 18px; display:flex; flex-direction:column;}
+  .sidebar .brand-mark{margin-bottom:34px; padding-left:4px;}
+  .nav-item{display:flex; align-items:center; gap:11px; padding:11px 12px; border-radius:9px; color:var(--text-muted); cursor:pointer; font-size:14px; margin-bottom:4px; transition:background .15s ease, color .15s ease; user-select:none;}
+  .nav-item svg{opacity:.8; flex:0 0 auto;}
+  .nav-item:hover{background:rgba(212,175,55,.08); color:var(--text);}
+  .nav-item.active{background:rgba(212,175,55,.14); color:var(--gold-bright); box-shadow:inset 0 0 0 1px rgba(212,175,55,.25);}
+  .role-badge{
+    display:inline-block; margin-top:14px; font-size:11px; padding:4px 9px; border-radius:20px;
+    border:1px solid var(--gold-soft); color:var(--gold-bright); background:rgba(212,175,55,.08);
+  }
+
+  .topbar{display:flex; justify-content:flex-end; gap:6px; padding:18px 30px 0;}
+  .icon-btn{
+    width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(24,20,9,.6); border:1px solid var(--line); color:var(--text-muted); cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .icon-btn:hover{border-color:var(--gold); color:var(--gold-bright);}
+
+  .main{padding:12px 40px 60px; max-width:1100px;}
+  .main-header{display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:26px; gap:20px; flex-wrap:wrap;}
+  .main-header h2{font-size:29px; font-weight:600; margin:0 0 4px;}
+  .main-header p{margin:0; color:var(--text-muted); font-size:13.5px;}
+  .btn-ghost{background:rgba(212,175,55,.08); color:var(--text); border:1px solid rgba(212,175,55,.35);}
+  .btn-ghost:hover{background:rgba(212,175,55,.16);}
+  .btn-ghost:disabled{opacity:.35; cursor:not-allowed;}
+  .btn-secondary{background:transparent; color:var(--text-muted); border:1px solid var(--line);}
+  .btn-secondary:hover{color:var(--text); border-color:var(--gold);}
+  .btn-danger{background:transparent; color:var(--danger); border:1px solid rgba(224,120,90,.4); font-size:12px; padding:6px 10px;}
+  .btn-pending{background:transparent; color:var(--text-muted); border:1px solid var(--line); font-size:12px; padding:6px 10px; border-radius:8px; cursor:pointer; font-weight:700; width:30px; flex:0 0 auto;}
+  .btn-pending:hover{border-color:var(--danger); color:var(--danger);}
+  .btn-pending.active{background:rgba(224,120,90,.15); color:var(--danger); border-color:var(--danger);}
+  .pending-badge{display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:var(--danger); color:#fff; font-size:11px; font-weight:700; cursor:help; vertical-align:middle;}
+  .status-badge{display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 9px; border-radius:20px; cursor:default;}
+  .status-badge.approved{background:rgba(143,208,160,.15); color:var(--ok); border:1px solid rgba(143,208,160,.35);}
+  .status-badge.pending{background:rgba(224,120,90,.15); color:var(--danger); border:1px solid rgba(224,120,90,.35);}
+  .btn-danger:hover{background:rgba(224,120,90,.1);}
+
+  /* client list */
+  .client-group{margin-bottom:10px; border:1px solid var(--line); border-radius:var(--radius); background:rgba(18,16,10,.55); overflow:hidden;}
+  .client-group-head{display:flex; align-items:center; justify-content:space-between; padding:15px 18px; cursor:pointer;}
+  .client-group-head .name{font-family:'Cormorant Garamond', serif; font-size:20px; font-weight:600;}
+  .client-group-head .count{font-size:12px; color:var(--text-muted);}
+  .chev{transition:transform .18s ease; color:var(--text-muted);}
+  .client-group.open .chev{transform:rotate(90deg);}
+  .positions{display:none; border-top:1px solid var(--line);}
+  .client-group.open .positions{display:block;}
+  .position-row{display:grid; grid-template-columns:1.4fr .7fr .9fr auto auto; gap:14px; align-items:center; padding:13px 18px; border-top:1px solid rgba(58,47,24,.5); font-size:13.5px;}
+  .position-row:first-child{border-top:none;}
+  .position-row .title{font-weight:500;}
+  .position-row .loc, .position-row .pay{color:var(--text-muted); font-size:12.5px;}
+  .position-row .expand-btn{justify-self:end; color:var(--gold); background:none; border:none; font-family:'Space Grotesk', sans-serif; font-size:12px; cursor:pointer; padding:4px 8px;}
+  .position-detail{display:none; padding:0 18px 16px 18px; font-size:12.8px; color:var(--text-muted); line-height:1.6; border-top:1px dashed rgba(58,47,24,.6);}
+  .position-detail.open{display:block; padding-top:12px;}
+
+  /* modal */
+  .modal-backdrop{display:none; position:fixed; inset:0; z-index:60; background:rgba(2,2,1,.7); align-items:center; justify-content:center; padding:20px;}
+  .modal-backdrop.open{display:flex;}
+  .modal{width:100%; max-width:480px; background:var(--bg-panel-2); border:1px solid var(--line); border-radius:var(--radius); padding:26px 26px 22px; box-shadow:0 30px 80px -20px rgba(0,0,0,.85), 0 0 60px -15px rgba(212,175,55,.16); max-height:86vh; overflow-y:auto;}
+  .modal h3{margin:0 0 16px; font-size:22px;}
+  .modal .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .modal-actions{display:flex; gap:10px; margin-top:18px; justify-content:flex-end;}
+
+  /* CV screen */
+  .dropzone{border:1.5px dashed var(--line); border-radius:var(--radius); padding:44px 24px; text-align:center; cursor:pointer; background:rgba(18,16,10,.4); transition:border-color .15s ease, background .15s ease;}
+  .dropzone.drag{border-color:var(--gold); background:rgba(212,175,55,.06);}
+  .dropzone h3{margin:14px 0 6px; font-size:20px; font-weight:600;}
+  .dropzone p{margin:0; color:var(--text-muted); font-size:13px;}
+  .dropzone input{display:none;}
+
+  .mode-options{display:flex; flex-direction:column; gap:10px; margin-bottom:16px;}
+  .mode-option{display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border:1px solid var(--line); border-radius:10px; background:rgba(18,16,10,.4); cursor:pointer; transition:border-color .15s ease, background .15s ease;}
+  .mode-option:hover{border-color:var(--gold-soft);}
+  .mode-option input[type=checkbox]{margin-top:3px; width:16px; height:16px; accent-color:var(--gold); flex:0 0 auto;}
+  .mode-option:has(input:checked){border-color:var(--gold); background:rgba(212,175,55,.08);}
+  .mode-title{display:block; font-size:13.5px; font-weight:600; color:var(--text);}
+  .mode-desc{display:block; font-size:12px; color:var(--text-muted); margin-top:2px;}
+
+  .client-picker{max-height:220px; overflow-y:auto; border:1px solid var(--line); border-radius:10px; background:rgba(5,4,3,.5); margin-bottom:16px;}
+  .client-picker-item{padding:10px 14px; font-size:13px; cursor:pointer; border-bottom:1px solid rgba(58,47,24,.5); transition:background .12s ease;}
+  .client-picker-item:last-child{border-bottom:none;}
+  .client-picker-item:hover{background:rgba(212,175,55,.08);}
+  .client-picker-item.selected{background:rgba(212,175,55,.16); color:var(--gold-bright);}
+  .client-picker-item .cp-client{font-weight:600;}
+  .client-picker-item .cp-title{color:var(--text-muted); font-size:12px;}
+  .client-picker-item.selected .cp-title{color:var(--gold-bright);}
+  .analyzing{display:none; align-items:center; gap:12px; margin-top:20px; color:var(--gold-bright); font-size:13.5px;}
+  .spinner{width:16px; height:16px; border-radius:50%; border:2px solid rgba(212,175,55,.25); border-top-color:var(--gold); animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .report{display:none; margin-top:26px; background:rgba(18,16,10,.6); border:1px solid var(--line); border-radius:var(--radius); padding:26px 28px; font-size:14px; line-height:1.7;}
+  .report h1,.report h2,.report h3{font-family:'Cormorant Garamond', serif;}
+  .report h2{font-size:22px; margin:22px 0 8px; border-top:1px solid var(--line); padding-top:18px;}
+  .report h2:first-child{border-top:none; padding-top:0; margin-top:0;}
+
+  .match-card{
+    margin-top:16px; padding:18px 20px; border-radius:12px;
+    background:rgba(18,16,10,.55); border:1px solid var(--line);
+  }
+  .match-card.top-match{
+    background:linear-gradient(135deg, rgba(212,175,55,.1), rgba(18,16,10,.6));
+    border-color:var(--gold-soft);
+  }
+  .match-card-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+  .match-rank{font-family:'Cormorant Garamond', serif; font-size:16px; color:var(--text-muted); font-weight:600;}
+  .top-match .match-rank{color:var(--gold-bright); font-size:18px;}
+  .match-score{font-family:'Space Grotesk', sans-serif; font-size:20px; font-weight:700;}
+  .match-title{font-size:15px; font-weight:600; color:var(--text); margin-bottom:10px;}
+  .match-section{margin-top:10px;}
+  .match-section strong{font-size:12.5px; color:var(--gold-bright);}
+  .match-section p{margin:4px 0 0; font-size:13px; line-height:1.6; color:var(--text);}
+  .match-short-reason{font-size:12.5px; color:var(--text-muted); margin:4px 0 12px; line-height:1.5;}
+  .risk-btn{font-size:12px; padding:8px 14px;}
+  .risk-detail{margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); font-size:13px; line-height:1.6;}
+  .report strong{color:var(--gold-bright);}
+  .report ul{padding-left:20px; margin:8px 0;}
+  .history{margin-top:34px;}
+  .history h3{font-size:17px; color:var(--text-muted); font-weight:500; margin-bottom:12px;}
+  .history-item{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border:1px solid var(--line); border-radius:10px; margin-bottom:8px; cursor:pointer; font-size:13.5px; background:rgba(18,16,10,.4);}
+  .history-item:hover{border-color:var(--gold);}
+  .history-item .meta{color:var(--text-muted); font-size:12px;}
+  .error-box{display:none; margin-top:18px; padding:14px 16px; border:1px solid rgba(224,120,90,.4); background:rgba(224,120,90,.08); border-radius:10px; color:var(--danger); font-size:13px;}
+
+  /* Profile / Help / Edit panels */
+  .panel-card{background:rgba(18,16,10,.55); border:1px solid var(--line); border-radius:var(--radius); padding:26px 28px; max-width:520px;}
+
+  .social-cta{
+    display:flex; align-items:center; gap:20px; padding:30px 32px; max-width:560px;
+    border:1px solid var(--line); border-radius:var(--radius);
+    background:linear-gradient(135deg, rgba(212,175,55,.08), rgba(18,16,10,.6));
+    cursor:pointer; transition:border-color .18s ease, transform .12s ease, box-shadow .18s ease;
+  }
+  .social-cta:hover{border-color:var(--gold); transform:translateY(-2px); box-shadow:0 14px 34px -14px rgba(212,175,55,.35);}
+  .social-cta-icon{
+    width:64px; height:64px; border-radius:50%; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center;
+    background:#0a0806; border:1px solid rgba(212,175,55,.5);
+    box-shadow:0 0 22px -4px rgba(212,175,55,.4);
+  }
+  .social-cta-title{font-family:'Cormorant Garamond', serif; font-size:22px; font-weight:600; color:var(--text);}
+  .social-cta-sub{font-size:12.5px; color:var(--text-muted); margin-top:3px;}
+  .social-report-body{font-family:'Space Grotesk', sans-serif; font-style:normal;}
+  .social-report-body b, .social-report-body strong{font-family:'Space Grotesk', sans-serif; font-style:normal; font-weight:600; color:#050403; background:var(--gold-bright); padding:1px 5px; border-radius:3px;}
+  .panel-card .field{margin-bottom:16px;}
+
+  .subtabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+  .subtab{padding:8px 14px; border-radius:8px; border:1px solid var(--line); font-size:13px; cursor:pointer; color:var(--text-muted);}
+  .subtab.active{border-color:var(--gold); color:var(--gold-bright); background:rgba(212,175,55,.08);}
+
+  table.data-table{width:100%; border-collapse:collapse; font-size:13px;}
+  table.data-table th, table.data-table td{border:1px solid var(--line); padding:9px 10px; text-align:left;}
+  table.data-table th{color:var(--text-muted); font-weight:500; font-size:12px;}
+  table.data-table select{background:rgba(5,4,3,.6); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:5px 6px; font-family:'Space Grotesk',sans-serif; font-size:12.5px;}
+
+  /* chat widget */
+  #chat-toggle{
+    position:fixed; bottom:24px; right:24px; z-index:80;
+    width:56px; height:56px; border-radius:50%; cursor:pointer;
+    background:#0a0806 radial-gradient(circle at 35% 30%, rgba(212,175,55,.35), transparent 60%);
+    border:1px solid rgba(212,175,55,.5);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 26px -6px rgba(0,0,0,.6), 0 0 22px -6px rgba(212,175,55,.4);
+  }
+  .chat-badge{
+    position:absolute; top:-6px; right:-6px; font-size:17px; line-height:1;
+    display:none; filter:drop-shadow(0 0 6px rgba(245,217,160,.8));
+    animation:badgepulse 1.3s ease-in-out infinite;
+  }
+  @keyframes badgepulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.28);}}
+  #chat-panel{
+    position:fixed; bottom:92px; right:24px; z-index:80; width:320px; max-height:440px;
+    background:linear-gradient(180deg, rgba(24,20,9,.96), rgba(8,7,3,.98));
+    border:1px solid var(--line); border-radius:var(--radius);
+    display:none; flex-direction:column; overflow:hidden;
+    box-shadow:0 30px 70px -20px rgba(0,0,0,.85), 0 0 40px -10px rgba(212,175,55,.18);
+  }
+  #chat-panel.open{display:flex;}
+  .chat-head{padding:14px 16px; border-bottom:1px solid var(--line); font-size:13.5px; display:flex; align-items:center; gap:8px;}
+  .chat-messages{flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:10px; font-size:12.8px;}
+  .chat-msg .who{color:var(--gold-bright); font-weight:600; margin-right:6px;}
+  .chat-msg .when{color:var(--text-muted); font-size:10.5px; margin-left:4px;}
+  .chat-input-row{display:flex; gap:8px; padding:12px; border-top:1px solid var(--line);}
+  .chat-input-row input{flex:1; background:rgba(5,4,3,.6); border:1px solid var(--line); border-radius:8px; padding:9px 11px; color:var(--text); font-family:'Space Grotesk',sans-serif; font-size:12.8px; outline:none;}
+  .chat-input-row input:focus{border-color:var(--gold);}
+  .chat-send{background:var(--gold); border:none; color:#0a0806; border-radius:8px; padding:0 14px; cursor:pointer; font-weight:600; font-size:12.5px;}
+
+  @media (max-width:760px){
+    .shell{grid-template-columns:1fr;}
+    .sidebar{flex-direction:row; overflow-x:auto; padding:14px 16px; align-items:center;}
+    .sidebar .brand-mark, .role-badge{display:none;}
+    .nav-item{margin-bottom:0; white-space:nowrap;}
+    .main{padding:20px 18px 50px;}
+    .position-row{grid-template-columns:1fr; gap:4px;}
+    .position-row .expand-btn{justify-self:start;}
+    #chat-panel{width:calc(100vw - 32px); right:16px;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="sky"></canvas>
+<div class="saturn"><div class="ring-tilt"><div class="ring-spin outer"></div><div class="ring-spin"></div></div><div class="body"></div></div>
+<div class="veil"></div>
+<canvas id="intro-canvas"></canvas>
+
+<div class="stage">
+
+  <!-- LOGIN / REGISTER -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg>
+        <span>CARRIERE SERVICE CENTER — RECRUITMENT</span>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="login-block">
+        <h1>Recruitment Ormi</h1>
+        <p class="lead">Client haritasına ve aday analiz merkezine özel erişim.</p>
+        <form id="login-form">
+          <div class="field"><label for="user">E-posta</label><input type="email" id="user" autocomplete="off"></div>
+          <div class="field"><label for="pass">Şifre</label><input type="password" id="pass" autocomplete="off"></div>
+          <div class="checkline"><input type="checkbox" id="remember"><label for="remember" style="margin:0;">Giriş bilgilerimi kaydet</label></div>
+          <div class="error-msg" id="login-error">Kullanıcı adı veya şifre hatalı.</div>
+          <button type="submit" class="btn btn-primary">Giriş Yap</button>
+        </form>
+        <div class="switch-form">Hesabınız yok mu? <a id="go-register">Kayıt olun</a></div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="register-block" style="display:none;">
+        <h1>Kayıt Ol</h1>
+        <p class="lead">Bilgilerinizi girerek yeni bir üyelik oluşturun.</p>
+        <form id="register-form">
+          <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="field"><label>Ad</label><input type="text" id="r-name"></div>
+            <div class="field"><label>Soyad</label><input type="text" id="r-surname"></div>
+          </div>
+          <div class="field"><label>Kullanıcı adı</label><input type="text" id="r-user"></div>
+          <div class="field"><label>E-posta</label><input type="email" id="r-email"></div>
+          <div class="field"><label>Şifre</label><input type="password" id="r-pass"></div>
+          <div style="position:absolute; left:-9999px; opacity:0; height:0; overflow:hidden;" aria-hidden="true">
+            <label for="r-website">Website</label>
+            <input type="text" id="r-website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="error-msg" id="register-error"></div>
+          <div class="ok-msg" id="register-ok"></div>
+          <button type="submit" class="btn btn-primary">Kayıt Ol</button>
+        </form>
+        <div class="switch-form">Zaten hesabınız var mı? <a id="go-login">Giriş yapın</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app-screen">
+    <div class="shell">
+      <div class="sidebar">
+        <div class="brand-mark">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg>
+          <span>CARRIERE</span>
+        </div>
+        <div class="nav-item active" data-view="clients">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>
+          Clientler
+        </div>
+        <div class="nav-item" data-view="cv">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15l2 2 4-4"/></svg>
+          Yeni Aday (CV)
+        </div>
+        <div class="nav-item" data-view="social">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11l18-7-7 18-3-8-8-3z"/></svg>
+          Sosyal Medya Paylaşım Yardımcısı
+        </div>
+        <div class="nav-item" data-view="eod">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h3"/></svg>
+          Gün Sonu Raporu
+        </div>
+        <div id="who-box" style="margin-top:auto; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--text-muted);">
+          Oturum: <b id="who" style="color:var(--text);"></b>
+          <div><span class="role-badge" id="role-badge"></span></div>
+        </div>
+      </div>
+
+      <div style="flex:1; display:flex; flex-direction:column;">
+        <div class="topbar">
+          <div class="icon-btn" id="btn-edit" title="Yönetici Paneli" style="display:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <div class="icon-btn" id="btn-profile" title="Profil">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>
+          </div>
+          <div class="icon-btn" id="btn-help" title="Yardım">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.9.4-1.5 1-1.5 2.2"/><circle cx="12" cy="17" r=".4" fill="currentColor"/></svg>
+          </div>
+          <div class="icon-btn" id="btn-logout" title="Çıkış Yap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+          </div>
+        </div>
+
+        <div class="main">
+
+          <!-- CLIENTS VIEW -->
+          <div id="view-clients">
+            <div class="main-header">
+              <div><h2>Client Haritası</h2><p id="client-sub">— açık pozisyon</p></div>
+              <button class="btn btn-ghost" id="open-add-client">+ Yeni Client / Pozisyon</button>
+            </div>
+            <div id="client-list"></div>
+          </div>
+
+          <!-- CV VIEW -->
+          <div id="view-cv" style="display:none;">
+            <div class="main-header">
+              <div><h2>Yeni Aday Analizi</h2><p>CV yükle, kısa ve net bir uygunluk özeti al.</p></div>
+            </div>
+
+            <div class="mode-options">
+              <label class="mode-option" for="mode-scan">
+                <input type="checkbox" id="mode-scan">
+                <span class="mode-box">
+                  <span class="mode-title">Best matching client</span>
+                  <span class="mode-desc">Scan all clients, show the best match with pros/cons and a score out of 100.</span>
+                </span>
+              </label>
+              <label class="mode-option" for="mode-specific">
+                <input type="checkbox" id="mode-specific">
+                <span class="mode-box">
+                  <span class="mode-title">Check suitability for a specific client</span>
+                  <span class="mode-desc">Pick one open position, then check if this candidate fits it directly.</span>
+                </span>
+              </label>
+            </div>
+
+            <div id="client-picker-wrap" style="display:none;">
+              <label style="display:block; font-size:12px; color:var(--text-muted); margin:14px 0 6px;">Select the position this candidate applied for:</label>
+              <div class="client-picker" id="client-picker"></div>
+            </div>
+
+            <div class="dropzone" id="dropzone">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.4" style="margin:0 auto; display:block;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 11v6M9 14l3-3 3 3"/></svg>
+              <h3>PDF CV'yi buraya bırak</h3>
+              <p>veya tıklayıp dosya seç &middot; PDF, Word (.docx) veya PowerPoint (.pptx)</p>
+              <input type="file" id="file-input" accept=".pdf,.docx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation">
+            </div>
+            <div class="error-box" id="error-box" style="margin-top:16px;"></div>
+            <div class="report" id="report"></div>
+            <div class="history" id="history-wrap" style="display:none;"><h3>Geçmiş Analizler</h3><div id="history-list"></div></div>
+          </div>
+
+          <!-- SOCIAL MEDIA SHARE ASSISTANT VIEW -->
+          <div id="view-social" style="display:none;">
+            <div class="main-header">
+              <div><h2>Sosyal Medya Paylaşım Yardımcısı</h2><p>Facebook grupları için hazır ilan metni oluştur.</p></div>
+            </div>
+
+            <!-- AŞAMA 1: Paylaşım Oluştur ikonu -->
+            <div id="social-step-start">
+              <div class="social-cta" id="social-cta-btn">
+                <div class="social-cta-icon">
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5"><path d="M3 11l18-7-7 18-3-8-8-3z"/></svg>
+                </div>
+                <div>
+                  <div class="social-cta-title">Paylaşım Oluştur</div>
+                  <div class="social-cta-sub">Bir client / pozisyon seç, Facebook için hazır ilan metni al</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AŞAMA 2: Client seçimi -->
+            <div id="social-step-pick" style="display:none;">
+              <label style="display:block; font-size:12px; color:var(--text-muted); margin:4px 0 8px;">Hangi pozisyon için ilan hazırlıyorsun? Maaş client dosyasından, konaklama ve ulaşım otomatik eklenir.</label>
+              <div class="client-picker" id="social-client-picker"></div>
+              <button class="btn btn-secondary" id="social-back-1" style="margin-top:14px;">&larr; Geri</button>
+            </div>
+
+            <div class="analyzing" id="social-analyzing" style="display:none; align-items:center; gap:12px; margin-top:20px; color:var(--gold-bright); font-size:13.5px;"><div class="spinner"></div> İlan metni hazırlanıyor…</div>
+            <div class="error-box" id="social-error"></div>
+
+            <!-- SONUÇ -->
+            <div id="social-result" style="display:none;">
+              <div class="main-header" style="margin-top:26px; margin-bottom:10px;">
+                <div><h3 style="margin:0; font-size:19px;">Facebook için hazır metin</h3></div>
+                <button class="btn btn-ghost" id="social-copy">Kopyala</button>
+              </div>
+              <div class="report" id="social-report" style="display:block;"></div>
+
+              <div class="main-header" style="margin-top:30px; margin-bottom:10px;">
+                <div><h3 style="margin:0; font-size:19px;">Facebook Gruplarında Paylaş</h3><p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Grupları seç — metin kopyalanır ve seçili grupların sayfaları yeni sekmelerde açılır.</p></div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-ghost" id="open-add-group" style="display:none;">+ Grup Ekle</button>
+                  <button class="btn btn-ghost" id="open-fb-logs" style="display:none;">Logs</button>
+                </div>
+              </div>
+              <div id="fb-logs-panel" style="display:none; margin-bottom:16px;"></div>
+              <div class="client-picker" id="fb-group-picker" style="max-height:260px;"></div>
+              <div class="error-box" id="fb-share-error"></div>
+              <button class="btn btn-primary" style="width:auto; margin-top:14px;" id="fb-share-btn">Seçilenleri Paylaş</button>
+
+              <button class="btn btn-secondary" id="social-new" style="margin-top:26px; display:block;">+ Yeni paylaşım oluştur</button>
+            </div>
+          </div>
+
+          <!-- END OF DAY REPORT VIEW -->
+          <div id="view-eod" style="display:none;">
+            <div class="main-header">
+              <div><h2>Gün Sonu Raporu</h2><p>Her gün iş çıkışında serbest metin olarak raporunu yaz, kaydet. Geçmiş raporlarda keyword ile ara.</p></div>
+            </div>
+
+            <div class="panel-card" style="max-width:100%;">
+              <div class="row2" style="display:grid; grid-template-columns:200px 1fr; gap:12px; align-items:end;">
+                <div class="field" style="margin-bottom:0;">
+                  <label>Tarih</label>
+                  <input type="text" id="eod-date" placeholder="gg.aa.yyyy">
+                </div>
+              </div>
+              <div class="field" style="margin-top:14px;">
+                <label>Rapor</label>
+                <textarea id="eod-text" rows="7" placeholder="Bugün yapılanları yaz..." style="width:100%; background:rgba(5,4,3,.6); border:1px solid var(--line); border-radius:9px; padding:11px 13px; color:var(--text); font-family:'Space Grotesk', sans-serif; font-size:14px; outline:none; resize:vertical;"></textarea>
+              </div>
+              <div class="ok-msg" id="eod-ok">Kaydedildi.</div>
+              <button class="btn btn-primary" style="width:auto;" id="eod-save">Kaydet</button>
+            </div>
+
+            <div class="main-header" style="margin-top:34px; margin-bottom:10px;">
+              <div><h3 style="margin:0; font-size:19px;">Geçmiş Raporlar</h3></div>
+            </div>
+            <div class="field" style="max-width:420px;">
+              <input type="text" id="eod-search" placeholder="Ara... örn. Mehmet Gülenç">
+            </div>
+            <div id="eod-list" style="margin-top:16px;"></div>
+          </div>
+
+          <!-- PROFILE VIEW -->
+          <div id="view-profile" style="display:none;">
+            <div class="main-header"><div><h2>Profil</h2><p>Kişisel bilgilerinizi güncelleyin.</p></div></div>
+            <div class="panel-card">
+              <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="field"><label>Ad</label><input type="text" id="p-name"></div>
+                <div class="field"><label>Soyad</label><input type="text" id="p-surname"></div>
+              </div>
+              <div class="field"><label>Telefon</label><input type="tel" id="p-phone" placeholder="+31 6 ..."></div>
+              <div class="field"><label>E-posta</label><input type="email" id="p-email"></div>
+              <div class="ok-msg" id="profile-ok">Kaydedildi.</div>
+              <button class="btn btn-ghost" id="save-profile">Kaydet</button>
+            </div>
+          </div>
+
+          <!-- HELP VIEW -->
+          <div id="view-help" style="display:none;">
+            <div class="main-header"><div><h2>Yardım</h2></div></div>
+            <div class="panel-card">
+              <p style="color:var(--text-muted); font-size:14px; line-height:1.7;">Herhangi bir sorunuz için bize ulaşın:</p>
+              <p><a href="mailto:g.ziypak@carriere.com" style="font-size:15px;">g.ziypak@carriere.com</a></p>
+            </div>
+          </div>
+
+          <!-- EDIT (ADMIN) VIEW -->
+          <div id="view-edit" style="display:none;">
+            <div class="main-header"><div><h2>Yönetici Paneli</h2><p>Üyeler, erişim seviyeleri ve sistem logları.</p></div></div>
+            <div class="subtabs">
+              <div class="subtab active" data-etab="members">Üyeler</div>
+              <div class="subtab" data-etab="logins">Giriş Kayıtları</div>
+              <div class="subtab" data-etab="logs">Aktivite Logları</div>
+              <div class="subtab" data-etab="notif">Kayıt Bildirimleri</div>
+              <div class="subtab" data-etab="critical">Critical Hatalar</div>
+            </div>
+            <div id="etab-members"></div>
+            <div id="etab-logins" style="display:none;"></div>
+            <div id="etab-logs" style="display:none;"></div>
+            <div id="etab-notif" style="display:none;"></div>
+            <div id="etab-critical" style="display:none;"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD CLIENT MODAL -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal">
+      <h3>Yeni Pozisyon Ekle</h3>
+      <div class="field"><label>Client adı</label><input type="text" id="m-client" placeholder="örn. Lamers by Aalberts"></div>
+      <div class="field"><label>Pozisyon başlığı</label><input type="text" id="m-title" placeholder="örn. CNC Operator"></div>
+      <div class="row2"><div class="field"><label>Lokasyon</label><input type="text" id="m-loc"></div><div class="field"><label>Çalışma saati</label><input type="text" id="m-hours"></div></div>
+      <div class="field"><label>Maaş</label><input type="text" id="m-pay"></div>
+      <div class="field"><label>Notlar</label><input type="text" id="m-notes"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="m-cancel">Vazgeç</button>
+        <button class="btn btn-primary" style="width:auto;" id="m-save">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD FACEBOOK GROUP MODAL -->
+  <div class="modal-backdrop" id="group-modal-backdrop">
+    <div class="modal">
+      <h3 id="group-modal-title">Facebook Grubu Ekle</h3>
+      <div class="field"><label>Grup adı</label><input type="text" id="g-name" placeholder="örn. Hollanda İş İlanları"></div>
+      <div class="field"><label>Grup linki</label><input type="text" id="g-url" placeholder="https://facebook.com/groups/..."></div>
+      <div class="row2"><div class="field"><label>Üye sayısı (opsiyonel)</label><input type="text" id="g-members" placeholder="örn. 42.000"></div><div class="field"><label>Aktivite notu (opsiyonel)</label><input type="text" id="g-activity" placeholder="örn. günde ~15-20 ilan"></div></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="g-cancel">Vazgeç</button>
+        <button class="btn btn-primary" style="width:auto;" id="g-save">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPROVAL STATUS MODAL -->
+  <div class="modal-backdrop" id="approval-modal-backdrop">
+    <div class="modal">
+      <h3>Onay Durumu Belirt</h3>
+      <div id="approval-modal-group-name" style="color:var(--gold-bright); font-size:14px; margin-bottom:14px;"></div>
+      <div class="field">
+        <label>Hangi hesabın durumunu belirtiyorsun?</label>
+        <select id="approval-user-select" style="width:100%; background:rgba(5,4,3,.6); color:var(--text); border:1px solid var(--line); border-radius:9px; padding:11px 13px; font-family:'Space Grotesk',sans-serif; font-size:14px;"></select>
+      </div>
+      <div class="modal-actions" style="justify-content:flex-start; flex-wrap:wrap;">
+        <button class="btn btn-secondary" id="approval-cancel">Vazgeç</button>
+        <button class="btn" style="background:rgba(143,208,160,.15); color:var(--ok); border:1px solid rgba(143,208,160,.4); width:auto;" id="approval-set-approved">✅ Onaylandı</button>
+        <button class="btn" style="background:rgba(224,120,90,.15); color:var(--danger); border:1px solid rgba(224,120,90,.4); width:auto;" id="approval-set-pending">⏳ Onay Aşamasında</button>
+        <button class="btn btn-secondary" id="approval-clear">Durumu Temizle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT PASSWORD GATE MODAL -->
+  <div class="modal-backdrop" id="gate-backdrop">
+    <div class="modal" style="max-width:340px;">
+      <h3>Yönetici Doğrulama</h3>
+      <div class="field"><label>Yönetici şifresi</label><input type="password" id="gate-pass"></div>
+      <div class="error-msg" id="gate-error">Şifre hatalı.</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="gate-cancel">Vazgeç</button>
+        <button class="btn btn-primary" style="width:auto;" id="gate-confirm">Onayla</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CV ANALİZ YÜKLEME SAHNESİ -->
+<div id="loading-scene">
+  <svg id="loading-svg" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="hullGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#f5d9a0" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#f5d9a0" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="engineGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#ffe9b8" stop-opacity="0.95"/>
+        <stop offset="60%" stop-color="#d4af37" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#d4af37" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="hullBody" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#181409"/>
+        <stop offset="55%" stop-color="#0c0a05"/>
+        <stop offset="100%" stop-color="#050403"/>
+      </linearGradient>
+    </defs>
+
+    <g id="bg-dust"></g>
+
+    <!-- UZAY GEMİSİ -->
+    <g id="ship-group" transform="translate(560,220)">
+      <ellipse cx="0" cy="0" rx="150" ry="150" fill="url(#hullGlow)" opacity="0.12"/>
+      <ellipse id="engine-flare" cx="118" cy="6" rx="46" ry="20" fill="url(#engineGlow)"/>
+      <path d="M -150,0 C -150,-42 -70,-70 10,-70 C 90,-70 150,-30 150,0 C 150,30 90,66 10,66 C -70,66 -150,40 -150,0 Z"
+            fill="url(#hullBody)" stroke="#d4af37" stroke-width="2.5" opacity="0.98"/>
+      <path d="M -150,0 C -150,-42 -70,-70 10,-70 C 90,-70 150,-30 150,0"
+            fill="none" stroke="rgba(245,217,160,.55)" stroke-width="1.2"/>
+      <path d="M -40,-52 L 40,-58 L 20,-30 L -30,-28 Z" fill="#0a0806" stroke="#8a6a24" stroke-width="1.5"/>
+      <path d="M -40,52 L 40,58 L 20,30 L -30,28 Z" fill="#0a0806" stroke="#8a6a24" stroke-width="1.5"/>
+      <ellipse cx="-30" cy="0" rx="34" ry="26" fill="#0a0806" stroke="#d4af37" stroke-width="2"/>
+      <ellipse cx="-30" cy="0" rx="22" ry="16" fill="#f7e6b8" opacity="0.85"/>
+      <ellipse cx="-30" cy="0" rx="22" ry="16" fill="#f7e6b8" opacity="0.4">
+        <animate attributeName="opacity" values="0.85;0.35;0.85" dur="2.6s" repeatCount="indefinite"/>
+      </ellipse>
+      <g stroke="#8a6a24" stroke-width="1" opacity="0.6">
+        <line x1="-110" y1="-18" x2="60" y2="-30"/>
+        <line x1="-110" y1="18" x2="60" y2="30"/>
+        <line x1="-110" y1="0" x2="90" y2="0"/>
+      </g>
+      <circle cx="35" cy="-38" r="3" fill="#f5d9a0"><animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite"/></circle>
+      <circle cx="35" cy="38" r="3" fill="#f5d9a0"><animate attributeName="opacity" values="0.2;1;0.2" dur="1.4s" repeatCount="indefinite"/></circle>
+      <!-- hava kilidi / dock noktası -->
+      <g id="airlock" transform="translate(-118,-4)">
+        <rect x="-14" y="-16" width="28" height="32" rx="4" fill="#100c05" stroke="#f5d9a0" stroke-width="2"/>
+        <circle cx="0" cy="0" r="7" fill="none" stroke="#f5d9a0" stroke-width="2"/>
+        <circle id="airlock-light" cx="0" cy="-13" r="2.4" fill="#8fd0a0"/>
+      </g>
+    </g>
+
+    <!-- HALAT -->
+    <path id="tether" d="" fill="none" stroke="#d4af37" stroke-width="2" stroke-dasharray="1 7" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- ASTRONOT -->
+    <g id="astro-group" transform="translate(140,360)">
+      <ellipse cx="0" cy="26" rx="30" ry="10" fill="#000" opacity="0.15"/>
+      <!-- jetpack alev -->
+      <ellipse cx="-16" cy="10" rx="7" ry="12" fill="url(#engineGlow)" opacity="0.8"/>
+      <!-- backpack -->
+      <rect x="-14" y="-10" width="14" height="26" rx="4" fill="#100c05" stroke="#8a6a24" stroke-width="1.4"/>
+      <!-- gövde -->
+      <path d="M -8,-6 C -8,-22 24,-22 24,-6 L 22,20 C 22,28 -6,28 -8,20 Z" fill="#0e0b06" stroke="#f5d9a0" stroke-width="2"/>
+      <line x1="-2" y1="-4" x2="18" y2="-4" stroke="#d4af37" stroke-width="1.4" opacity="0.7"/>
+      <line x1="-3" y1="6" x2="19" y2="6" stroke="#d4af37" stroke-width="1.4" opacity="0.7"/>
+      <!-- kollar -->
+      <path d="M -6,-10 C -22,-6 -30,6 -34,18" fill="none" stroke="#0e0b06" stroke-width="9" stroke-linecap="round"/>
+      <path d="M -6,-10 C -22,-6 -30,6 -34,18" fill="none" stroke="#8a6a24" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M 22,-10 C 30,2 30,10 26,18" fill="none" stroke="#0e0b06" stroke-width="9" stroke-linecap="round"/>
+      <!-- bacaklar -->
+      <path d="M 0,20 C -2,32 -8,40 -10,50" fill="none" stroke="#0e0b06" stroke-width="10" stroke-linecap="round"/>
+      <path d="M 14,20 C 18,32 16,42 20,50" fill="none" stroke="#0e0b06" stroke-width="10" stroke-linecap="round"/>
+      <!-- kask -->
+      <circle cx="8" cy="-24" r="15" fill="#100c05" stroke="#f5d9a0" stroke-width="2.4"/>
+      <path d="M -1,-30 A 15 15 0 0 1 17,-24 A 15 15 0 0 1 6,-11" fill="#e9d19c" opacity="0.55"/>
+      <circle cx="6" cy="-27" r="3" fill="#fff8e6" opacity="0.85"/>
+      <!-- halat bağlantı noktası (bel) -->
+      <circle id="astro-anchor" cx="20" cy="18" r="2" fill="#f5d9a0"/>
+    </g>
+  </svg>
+
+  <div class="loading-caption">
+    <div class="loading-title">CV Analiz Ediliyor</div>
+    <div class="loading-sub" id="loading-sub">Aday, geminin veri bankasına aktarılıyor…</div>
+    <div class="loading-bar-track"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+  </div>
+</div>
+
+<!-- CHAT WIDGET -->
+<div id="chat-toggle">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg>
+  <span id="chat-badge" class="chat-badge">☄️</span>
+</div>
+<div id="chat-panel">
+  <div class="chat-head"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z" fill="#d4af37"/></svg> Carriere Ekip Sohbeti</div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chat-input" placeholder="Mesaj yaz...">
+    <button class="chat-send" id="chat-send">Gönder</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.0/mammoth.browser.min.js"></script>
+<script type="module">
+/* ============ FIREBASE SETUP ============ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signOut, setPersistence, browserLocalPersistence, browserSessionPersistence
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+const app = initializeApp(window.FIREBASE_CONFIG);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ============ STARFIELD + METEORS + MOUSE SPARKLE TRAIL ============ */
+const canvas = document.getElementById('sky');
+const ctx = canvas.getContext('2d');
+let W, H, stars = [], shootingStars = [], sparkles = [];
+function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+function initStars(){
+  stars = [];
+  const count = Math.floor((W*H)/4200);
+  for(let i=0;i<count;i++){
+    stars.push({
+      x:Math.random()*W, y:Math.random()*H,
+      r:Math.random()*1.7+0.4,
+      baseAlpha:Math.random()*0.55+0.4,
+      twinkleSpeed:Math.random()*0.02+0.005,
+      phase:Math.random()*Math.PI*2,
+      hue: Math.random()<0.4?'gold':'white'
+    });
+  }
+}
+initStars(); window.addEventListener('resize', initStars);
+
+function spawnShootingStar(){
+  const startX = Math.random()*W*0.7 + W*0.1;
+  const startY = -20 - Math.random()*80;
+  const speed = 0.6 + Math.random()*0.9; // yavaş
+  shootingStars.push({
+    x:startX, y:startY,
+    vx: speed*(1.1+Math.random()*0.6), vy: speed*(0.8+Math.random()*0.5),
+    life:0, maxLife: 260 + Math.random()*260,
+    tailLen: 140 + Math.random()*90,
+    size: 1.4 + Math.random()*1.1
+  });
+}
+function maybeSpawnShootingStar(){
+  const target = 4 + Math.floor(Math.random()*2); // 4-5 eşzamanlı
+  if(shootingStars.length < target && Math.random() < 0.03){ spawnShootingStar(); }
+}
+function drawStar(s, alpha){
+  const color = s.hue==='gold' ? `rgba(245,217,160,${alpha})` : `rgba(255,252,240,${alpha})`;
+  ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fillStyle = color; ctx.fill();
+  if(s.r > 1.5){ ctx.beginPath(); ctx.arc(s.x, s.y, s.r*2.4, 0, Math.PI*2); ctx.fillStyle = s.hue==='gold' ? `rgba(245,217,160,${alpha*0.12})` : `rgba(255,252,240,${alpha*0.1})`; ctx.fill(); }
+}
+
+/* fare parıltı izi */
+let mouseX = -1000, mouseY = -1000;
+window.addEventListener('mousemove', (e)=>{
+  mouseX = e.clientX; mouseY = e.clientY;
+  if(Math.random() < 0.55){
+    sparkles.push({ x: mouseX + (Math.random()-0.5)*6, y: mouseY + (Math.random()-0.5)*6, life:0, maxLife: 26+Math.random()*14, r: 0.8+Math.random()*1.6 });
+  }
+});
+
+function tick(){
+  ctx.clearRect(0,0,W,H);
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0b0c16'); g.addColorStop(0.5,'#14100a'); g.addColorStop(1,'#1c150a');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+  for(const s of stars){ s.phase += s.twinkleSpeed; const a = s.baseAlpha + Math.sin(s.phase)*0.3; drawStar(s, Math.max(0.15, Math.min(1,a))); }
+
+  maybeSpawnShootingStar();
+  shootingStars = shootingStars.filter(m => m.life < m.maxLife);
+  for(const m of shootingStars){
+    m.life++; m.x += m.vx; m.y += m.vy;
+    const fadeIn = Math.min(1, m.life/18);
+    const fadeOut = Math.min(1, (m.maxLife-m.life)/40);
+    const alpha = Math.min(fadeIn, fadeOut);
+    const tx = m.x - (m.vx/Math.max(0.001,Math.hypot(m.vx,m.vy)))*m.tailLen;
+    const ty = m.y - (m.vy/Math.max(0.001,Math.hypot(m.vx,m.vy)))*m.tailLen;
+    const grad = ctx.createLinearGradient(m.x, m.y, tx, ty);
+    grad.addColorStop(0, `rgba(255,246,220,${0.95*alpha})`);
+    grad.addColorStop(0.25, `rgba(245,217,160,${0.6*alpha})`);
+    grad.addColorStop(1, 'rgba(245,217,160,0)');
+    ctx.strokeStyle = grad; ctx.lineWidth = m.size; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.beginPath(); ctx.arc(m.x, m.y, m.size*1.3, 0, Math.PI*2); ctx.fillStyle = `rgba(255,250,230,${alpha})`; ctx.fill();
+  }
+  if(shootingStars.length < 4 && Math.random() < 0.02) spawnShootingStar();
+
+  sparkles = sparkles.filter(p => p.life < p.maxLife);
+  for(const p of sparkles){
+    p.life++;
+    const a = 1 - p.life/p.maxLife;
+    ctx.beginPath(); ctx.arc(p.x, p.y - p.life*0.35, p.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(245,217,160,${a*0.85})`; ctx.fill();
+  }
+
+  requestAnimationFrame(tick);
+}
+for(let i=0;i<5;i++) spawnShootingStar();
+tick();
+
+function nowStr(){ return new Date().toLocaleString('tr-TR'); }
+
+/* ============ GENEL SPAM ENGELLEYİCİ ============ */
+// 1) Tıklama/işlem hız sınırlayıcı: aynı işlem art arda çok hızlı tetiklenirse engeller.
+const _spamGuardLast = {};
+function isSpamming(key, cooldownMs = 1500){
+  const now = Date.now();
+  const last = _spamGuardLast[key] || 0;
+  if(now - last < cooldownMs) return true;
+  _spamGuardLast[key] = now;
+  return false;
+}
+
+// 2) localStorage tabanlı, sayfa yenilense de kalıcı deneme sayacı (örn. kayıt formu için).
+function rateLimitCheck(storageKey, maxAttempts, windowMs){
+  let attempts = [];
+  try{ attempts = JSON.parse(localStorage.getItem(storageKey) || '[]'); }catch(e){ attempts = []; }
+  const now = Date.now();
+  attempts = attempts.filter(t => now - t < windowMs);
+  if(attempts.length >= maxAttempts){
+    return { allowed:false, waitMs: windowMs - (now - attempts[0]) };
+  }
+  attempts.push(now);
+  try{ localStorage.setItem(storageKey, JSON.stringify(attempts)); }catch(e){}
+  return { allowed:true };
+}
+
+// 3) Honeypot kontrolü: gizli alan doluysa bot kabul edilir.
+function isHoneypotTriggered(fieldId){
+  const el = document.getElementById(fieldId);
+  return !!(el && el.value && el.value.trim().length > 0);
+}
+
+
+/* ============ FIRESTORE HELPERS (appdata/{id} = {list:[...]}) ============ */
+async function loadList(id, fallback){
+  try{
+    const snap = await getDoc(doc(db,'appdata',id));
+    return snap.exists() && snap.data().list ? snap.data().list : fallback;
+  }catch(e){ console.error(e); return fallback; }
+}
+async function saveList(id, list){
+  try{ await setDoc(doc(db,'appdata',id), {list}); }catch(e){ console.error(e); }
+}
+async function loadAllUsers(){
+  const out = [];
+  try{
+    const snap = await getDocs(collection(db,'users'));
+    snap.forEach(d => out.push({uid:d.id, ...d.data()}));
+  }catch(e){ console.error(e); }
+  return out;
+}
+
+/* ============ APP STATE ============ */
+let clients = [];
+let activityLog = [];
+let chatMessages = [];
+let notifications = [];
+let fbGroups = [];
+let criticalErrors = [];
+let eodReports = [];
+let users = [];
+let currentUser = null; // {uid, username, name, surname, email, phone, role}
+
+const DEFAULT_CLIENTS = [
+  {client:"De Graaf Bakeries", title:"Operator Productie", loc:"Bunschoten-Spakenburg", hours:"38h/hafta, 3 vardiya", pay:"€2.880–€3.868 brüt/ay", notes:"Deneyim şart değil, şirket içi eğitim (6-8 hafta) var."},
+  {client:"DHL", title:"VAS Technician", loc:"Beringe, Limburg", hours:"40h/hafta, gündüz 06:00-18:00", pay:"€2.753,90–€3.420,55 brüt/ay", notes:"MBO-4 teknik eğitim, min B2 İngilizce, elektronik/telekom/fiber optik ilgisi."},
+  {client:"Brouwer Group", title:"Electrical Engineer", loc:"Zeewolde", hours:"32h/hafta (esnek)", pay:"€3.317,20–€4.000 brüt/ay", notes:"EPLAN/AutoCAD Electrical, NEN 1010 avantaj, iyi Hollandaca gerekli."},
+  {client:"Brouwer Group", title:"Process Engineer", loc:"Zeewolde", hours:"38-40h/hafta", pay:"€3.700–€4.000 brüt/ay", notes:"HBO/WO Makine/Kimya/Proses Mühendisliği geçmişi."},
+  {client:"Brouwer Group", title:"Plumber (Loodgieter)", loc:"Zeewolde", hours:"45h/hafta, Pzt-Cuma 07:00-16:00", pay:"€19,14 brüt/saat + ADV", notes:"Tesisatçı deneyimi, teknik çizim okuma, İngilizce iletişim."},
+  {client:"Kuehne + Nagel", title:"Maintenance Engineer", loc:"Tilburg & Zwolle (2 pozisyon)", hours:"40h/hafta", pay:"€19,63 brüt/saat + vardiya primi (%35-%45)", notes:"Mekanik/elektrik bakım deneyimi, konaklama ve araç sağlanabilir."},
+  {client:"Mifa Aluminium", title:"CNC Operator", loc:"Venlo", hours:"3 vardiya, %23,5 prim", pay:"€17,04 brüt/saat başlangıç (€2.950–€3.875/ay)", notes:"CNC deneyimi şart değil, teknik yatkınlık ve çizim okuma önemli."},
+  {client:"Mogema by Aalberts", title:"Allround Maintenance Technician", loc:"'t Harde / Dronten", hours:"36-40h/hafta, 2 vardiya", pay:"€3.319–€5.376 brüt/ay", notes:"Mekanik + elektrik bakım, Hollandaca VE İngilizce gerekli."},
+  {client:"Mogema by Aalberts", title:"CNC Miller / CNC Frezer (Grootverspaning)", loc:"'t Harde", hours:"36-40h/hafta, 4 vardiya (%28 prim)", pay:"€3.180–€5.376 brüt/ay (kademeye göre)", notes:"Fanuc/Heidenhain/Siemens, büyük parça işleme deneyimi tercih."},
+  {client:"Pneutec by Aalberts", title:"Warehouse Associate", loc:"Vessem", hours:"40h/hafta", pay:"€2.500–€3.000 brüt/ay", notes:"MBO Lojistik + min 4 yıl depo deneyimi, WMS/ERP zorunlu."},
+  {client:"Pneutec by Aalberts", title:"Assembly Worker", loc:"Vessem", hours:"36-40h/hafta, 2 vardiya", pay:"€2.500–€3.000 brüt/ay + %16 prim", notes:"Temiz oda montajı, MBO teknik veya montaj deneyimi."},
+  {client:"Snack Connection", title:"Shift Supervisor Productie", loc:"Bergschenhoek", hours:"40h/hafta, 2 vardiya", pay:"€3.500–€4.850 brüt/ay (%14 prim dahil)", notes:"Hollandaca VE İngilizce, liderlik deneyimi, BHV sertifikası."},
+  {client:"VDL ETG Technology & Development", title:"Lead Mechanical Engineer", loc:"Eindhoven", hours:"belirtilmemiş", pay:"€5.500–€6.300 brüt/ay", notes:"Min 5 yıl high-tech deneyim, Siemens NX/Teamcenter, ekip liderliği."},
+  {client:"VDL ETG Technology & Development", title:"Mechanical System Architect", loc:"Eindhoven", hours:"belirtilmemiş", pay:"€5.800–€6.900 brüt/ay", notes:"Master derece, min 5 yıl high-tech/yarı iletken, Hollandaca VE İngilizce."},
+  {client:"Lamers by Aalberts", title:"Quality / Measurement Technician", loc:"Nijmegen", hours:"Tam zamanlı, 2 vardiya", pay:"€17,00–€21,00 brüt/saat + %16 prim", notes:"Kalite kontrol, teknik çizim okuma, min B1 Hollandaca veya İngilizce."},
+  {client:"Lamers by Aalberts", title:"Cleanroom / Assembly Technician", loc:"Nijmegen", hours:"Tam zamanlı, 2 vardiya", pay:"€17,00–€21,00 brüt/saat + %16 prim", notes:"Paslanmaz çelik boru montajı, temiz oda tercih, min B1."},
+  {client:"Lamers by Aalberts", title:"TIG / Orbital Welder", loc:"Nijmegen", hours:"Tam zamanlı, 2 vardiya", pay:"€17,00–€21,00 brüt/saat + %16 prim", notes:"TIG/orbital kaynak, ince cidarlı paslanmaz çelik boru deneyimi."},
+  {client:"Lamers by Aalberts", title:"Metal Production / Machine Operator", loc:"Nijmegen", hours:"Tam zamanlı, 2 vardiya", pay:"€17,00–€21,00 brüt/saat + %16 prim", notes:"Kesme/bükme/parlatma, paslanmaz çelik deneyimi tercih."},
+  {client:"Lamers by Aalberts", title:"Cleanroom Production Employee", loc:"Nijmegen", hours:"Tam zamanlı, 2 vardiya", pay:"€17,00–€21,00 brüt/saat + %16 prim", notes:"Temiz oda üretim/paketleme, teknik yatkınlık ve öğrenme isteği."}
+];
+
+async function ensureClientsSeeded(){
+  const snap = await getDoc(doc(db,'appdata','clients'));
+  if(!snap.exists()){ await saveList('clients', DEFAULT_CLIENTS); }
+}
+
+async function logActivity(type, detail){
+  activityLog.unshift({type, user: currentUser ? (currentUser.username||currentUser.email) : '—', detail, at: nowStr()});
+  activityLog = activityLog.slice(0, 300);
+  await saveList('activityLog', activityLog);
+}
+
+/* ============ CRITICAL / VERIFIER HATA KAYDI ============ */
+async function recordCriticalError(source, description){
+  if(!description) return;
+  criticalErrors.unshift({
+    source, hata: description, duzeltme: 'Critical/Verifier zinciri tarafından otomatik düzeltildi',
+    user: currentUser ? (currentUser.username||currentUser.email) : '—', at: nowStr()
+  });
+  criticalErrors = criticalErrors.slice(0, 200);
+  await saveList('criticalErrors', criticalErrors);
+  await logActivity('critical_error', `[${source}] ${description}`);
+}
+function getKnownErrorsFor(source){
+  return criticalErrors.filter(e => e.source === source).slice(0, 15).map(e => ({ hata: e.hata, duzeltme: e.duzeltme }));
+}
+
+/* ============ SATÜRN'E YAKLAŞMA INTRO ANİMASYONU ============ */
+let pendingIntro = false;
+const introCanvas = document.getElementById('intro-canvas');
+const ictx = introCanvas.getContext('2d');
+function playSaturnIntro(onDone){
+  introCanvas.style.display = 'block';
+  introCanvas.style.opacity = '1';
+  const iw = introCanvas.width = window.innerWidth;
+  const ih = introCanvas.height = window.innerHeight;
+  const cx = iw/2, cy = ih*0.52;
+  const DUR = 3200;
+  const start = performance.now();
+  const introStars = [];
+  for(let i=0;i<220;i++){
+    const ang = Math.random()*Math.PI*2, dist = 40+Math.random()*Math.max(iw,ih)*0.75;
+    introStars.push({ang, dist, r:0.6+Math.random()*1.4, gold: Math.random()<0.4});
+  }
+  function ease(t){ return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+
+  function frame(now){
+    const raw = Math.min(1, (now-start)/DUR);
+    const p = ease(raw);
+    ictx.clearRect(0,0,iw,ih);
+    const bg = ictx.createRadialGradient(cx,cy,0,cx,cy,Math.max(iw,ih)*0.75);
+    bg.addColorStop(0, `rgba(20,15,8,1)`); bg.addColorStop(1, `rgba(4,3,2,1)`);
+    ictx.fillStyle = bg; ictx.fillRect(0,0,iw,ih);
+
+    // yıldızlar: yaklaştıkça büyüyüp parlaklaşıyor, dışa doğru kayıyor
+    for(const s of introStars){
+      const d = s.dist * (0.4 + p*2.6);
+      const x = cx + Math.cos(s.ang)*d, y = cy + Math.sin(s.ang)*d*0.7;
+      const size = s.r * (1+p*3.5);
+      const alpha = Math.min(1, 0.3+p*0.9);
+      if(x<-50||x>iw+50||y<-50||y>ih+50) continue;
+      ictx.beginPath(); ictx.arc(x,y,size,0,Math.PI*2);
+      ictx.fillStyle = s.gold ? `rgba(245,217,160,${alpha})` : `rgba(255,252,240,${alpha})`;
+      ictx.fill();
+    }
+
+    // halkalar: kameranın üstünden geçtiği hissi için hızla büyüyüp dışa taşıyor
+    const ringP = Math.min(1, p*1.35);
+    const ringA = ictx.createLinearGradient(0,cy,iw,cy);
+    ictx.save();
+    ictx.translate(cx,cy); ictx.rotate(-0.2);
+    for(let layer=0; layer<2; layer++){
+      const rx = (iw*0.55 + layer*40) * (0.5+ringP*1.8);
+      const ry = rx * 0.24;
+      ictx.beginPath();
+      ictx.ellipse(0,0,rx,ry,0,0,Math.PI*2);
+      ictx.strokeStyle = `rgba(245,217,160,${(0.5-layer*0.15)*(1-p*0.3)})`;
+      ictx.lineWidth = 10 - layer*4;
+      ictx.stroke();
+    }
+    ictx.restore();
+
+    // gezegen gövdesi: yaklaştıkça büyüyor, detaylı altın tonları
+    const planetR = 70 + p*p*Math.max(iw,ih)*0.62;
+    const grad = ictx.createRadialGradient(cx-planetR*0.28, cy-planetR*0.3, planetR*0.05, cx, cy, planetR);
+    grad.addColorStop(0,'#fdf3d2'); grad.addColorStop(0.18,'#f7e0a0');
+    grad.addColorStop(0.4,'#e0b563'); grad.addColorStop(0.65,'#b8862f');
+    grad.addColorStop(0.85,'#7a5a1e'); grad.addColorStop(1,'#2c2009');
+    ictx.beginPath(); ictx.arc(cx,cy,planetR,0,Math.PI*2); ictx.fillStyle = grad; ictx.fill();
+
+    // ışık hüzmeleri: gezegenden dışa doğru, halkalara ve yıldızlara yansıyan
+    ictx.save();
+    ictx.globalCompositeOperation = 'lighter';
+    for(let i=0;i<7;i++){
+      const ang = (i/7)*Math.PI*2 + p*1.2;
+      const len = planetR*1.6 + p*300;
+      const gx = cx + Math.cos(ang)*len, gy = cy + Math.sin(ang)*len*0.6;
+      const beam = ictx.createLinearGradient(cx,cy,gx,gy);
+      beam.addColorStop(0, `rgba(255,238,190,${0.18*p})`);
+      beam.addColorStop(1, 'rgba(255,238,190,0)');
+      ictx.strokeStyle = beam; ictx.lineWidth = 26;
+      ictx.beginPath(); ictx.moveTo(cx,cy); ictx.lineTo(gx,gy); ictx.stroke();
+    }
+    ictx.restore();
+
+    if(raw < 1){
+      requestAnimationFrame(frame);
+    } else {
+      // son parlama ve geçiş
+      let flash = 0;
+      function flashFrame(){
+        flash += 0.06;
+        introCanvas.style.opacity = String(Math.max(0, 1-flash));
+        if(flash < 1.05){ requestAnimationFrame(flashFrame); }
+        else { introCanvas.style.display = 'none'; onDone(); }
+      }
+      requestAnimationFrame(flashFrame);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ============ AUTH STATE ============ */
+onAuthStateChanged(auth, async (user) => {
+  if(user){
+    const profileSnap = await getDoc(doc(db,'users',user.uid));
+    const profile = profileSnap.exists() ? profileSnap.data() : { username:user.email, name:'', surname:'', email:user.email, phone:'', role:'Üye' };
+    const fullProfile = { uid:user.uid, ...profile, email: profile.email || user.email };
+    if(pendingIntro){
+      pendingIntro = false;
+      playSaturnIntro(()=> enterApp(fullProfile));
+    } else {
+      await enterApp(fullProfile);
+    }
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display = 'none';
+  }
+});
+
+async function enterApp(profile){
+  currentUser = profile;
+  await Promise.all([
+    ensureClientsSeeded(),
+  ]);
+  clients = await loadList('clients', DEFAULT_CLIENTS);
+  activityLog = await loadList('activityLog', []);
+  chatMessages = await loadList('chatMessages', []);
+  notifications = await loadList('notifications', []);
+  fbGroups = await loadList('fbGroups', []);
+  shareLogs = await loadList('shareLogs', []);
+  await ensureUsersCache();
+  criticalErrors = await loadList('criticalErrors', []);
+  eodReports = await loadList('eodReports', []);
+  lastSeenChatCount = chatMessages.length;
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('who').textContent = profile.name ? (profile.name+' '+(profile.surname||'')) : (profile.username||profile.email);
+  document.getElementById('role-badge').textContent = profile.role;
+  document.getElementById('btn-edit').style.display = profile.role === 'Yönetici' ? 'flex' : 'none';
+  document.getElementById('p-name').value = profile.name || '';
+  document.getElementById('p-surname').value = profile.surname || '';
+  document.getElementById('p-phone').value = profile.phone || '';
+  document.getElementById('p-email').value = profile.email || '';
+  renderClients();
+  renderChat();
+}
+
+/* ============ LOGIN / REGISTER ============ */
+document.getElementById('login-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const err = document.getElementById('login-error');
+  err.style.display = 'none';
+
+  if(isSpamming('login-submit', 1200)) return;
+  const rl = rateLimitCheck('carriere_login_attempts', 8, 5*60*1000);
+  if(!rl.allowed){
+    const minutes = Math.ceil(rl.waitMs / 60000);
+    err.textContent = `Çok fazla başarısız/hızlı giriş denemesi. Lütfen ${minutes} dakika sonra tekrar dene.`;
+    err.style.display = 'block';
+    return;
+  }
+
+  const email = document.getElementById('user').value.trim();
+  const pw = document.getElementById('pass').value;
+  try{
+    pendingIntro = true;
+    await setPersistence(auth, document.getElementById('remember').checked ? browserLocalPersistence : browserSessionPersistence);
+    await signInWithEmailAndPassword(auth, email, pw);
+    // onAuthStateChanged tetiklenip intro + enterApp() çağıracak
+  }catch(ex){
+    pendingIntro = false;
+    err.textContent = 'E-posta veya şifre hatalı.';
+    err.style.display = 'block';
+  }
+});
+
+document.getElementById('go-register').addEventListener('click', ()=>{
+  document.getElementById('login-block').style.display = 'none';
+  document.getElementById('register-block').style.display = 'block';
+});
+document.getElementById('go-login').addEventListener('click', ()=>{
+  document.getElementById('register-block').style.display = 'none';
+  document.getElementById('login-block').style.display = 'block';
+});
+
+document.getElementById('register-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const err = document.getElementById('register-error');
+  err.style.display = 'none';
+
+  // Bot tuzağı: gizli alan doluysa sessizce reddet (bota "başarılı" izlenimi vermeden durdur)
+  if(isHoneypotTriggered('r-website')){
+    err.textContent = 'Kayıt işlemi tamamlanamadı.'; err.style.display = 'block';
+    return;
+  }
+  // Aynı tarayıcıdan çok sık kayıt denemesi engeli: 10 dakikada en fazla 3 deneme
+  const rl = rateLimitCheck('carriere_register_attempts', 3, 10*60*1000);
+  if(!rl.allowed){
+    const minutes = Math.ceil(rl.waitMs / 60000);
+    err.textContent = `Çok fazla kayıt denemesi yapıldı. Lütfen ${minutes} dakika sonra tekrar dene.`;
+    err.style.display = 'block';
+    return;
+  }
+  // Aynı butona art arda hızlı tıklama engeli
+  if(isSpamming('register-submit', 2000)) return;
+
+  const name = document.getElementById('r-name').value.trim();
+  const surname = document.getElementById('r-surname').value.trim();
+  const uname = document.getElementById('r-user').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const pw = document.getElementById('r-pass').value;
+  if(!name || !surname || !uname || !email || !pw){
+    err.textContent = 'Lütfen tüm alanları doldurun.'; err.style.display = 'block'; return;
+  }
+  const submitBtn = document.querySelector('#register-form button[type=submit]');
+  submitBtn.disabled = true;
+  try{
+    pendingIntro = true;
+    const cred = await createUserWithEmailAndPassword(auth, email, pw);
+    const profile = { username:uname, name, surname, email, phone:'', role:'Üye', createdAt: nowStr() };
+    await setDoc(doc(db,'users',cred.user.uid), profile);
+
+    const notifList = await loadList('notifications', []);
+    notifList.unshift({name, surname, username:uname, email, at: nowStr()});
+    await saveList('notifications', notifList);
+
+    // onAuthStateChanged otomatik enterApp() çağıracak; ardından log ekleyelim
+    setTimeout(()=> logActivity('register', `${name} ${surname} (${uname}) kayıt oldu`), 800);
+  }catch(ex){
+    pendingIntro = false;
+    err.textContent = ex.code === 'auth/email-already-in-use' ? 'Bu e-posta zaten kayıtlı.' : 'Kayıt sırasında bir hata oluştu: ' + ex.message;
+    err.style.display = 'block';
+  }finally{
+    submitBtn.disabled = false;
+  }
+});
+
+document.getElementById('btn-logout').addEventListener('click', async ()=>{
+  await signOut(auth);
+  currentUser = null;
+  document.getElementById('login-block').style.display = 'block';
+  document.getElementById('register-block').style.display = 'none';
+});
+
+/* ============ TOP-RIGHT NAV ============ */
+function showMainView(id){
+  ['view-clients','view-cv','view-social','view-eod','view-profile','view-help','view-edit'].forEach(v=>{
+    document.getElementById(v).style.display = (v===id) ? 'block' : 'none';
+  });
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+}
+document.getElementById('btn-profile').addEventListener('click', ()=> showMainView('view-profile'));
+document.getElementById('btn-help').addEventListener('click', ()=> showMainView('view-help'));
+
+document.getElementById('save-profile').addEventListener('click', async ()=>{
+  currentUser.name = document.getElementById('p-name').value.trim();
+  currentUser.surname = document.getElementById('p-surname').value.trim();
+  currentUser.phone = document.getElementById('p-phone').value.trim();
+  currentUser.email = document.getElementById('p-email').value.trim();
+  await setDoc(doc(db,'users',currentUser.uid), {
+    username: currentUser.username, name: currentUser.name, surname: currentUser.surname,
+    email: currentUser.email, phone: currentUser.phone, role: currentUser.role,
+    createdAt: currentUser.createdAt || nowStr()
+  });
+  document.getElementById('who').textContent = currentUser.name + ' ' + currentUser.surname;
+  const ok = document.getElementById('profile-ok');
+  ok.style.display = 'block';
+  setTimeout(()=> ok.style.display='none', 2000);
+});
+
+/* ============ SIDEBAR NAV ============ */
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+    const view = item.dataset.view;
+    const map = { clients:'view-clients', cv:'view-cv', social:'view-social', eod:'view-eod' };
+    showMainView(map[view] || 'view-clients');
+    if(view === 'eod'){ renderEodList(); }
+  });
+});
+
+/* ============ EDIT (ADMIN) GATE ============ */
+const gateBackdrop = document.getElementById('gate-backdrop');
+document.getElementById('btn-edit').addEventListener('click', ()=>{
+  document.getElementById('gate-pass').value = '';
+  document.getElementById('gate-error').style.display = 'none';
+  gateBackdrop.classList.add('open');
+});
+document.getElementById('gate-cancel').addEventListener('click', ()=> gateBackdrop.classList.remove('open'));
+document.getElementById('gate-confirm').addEventListener('click', async ()=>{
+  const val = document.getElementById('gate-pass').value;
+  if(val === 'gokay830'){
+    gateBackdrop.classList.remove('open');
+    users = await loadAllUsers();
+    showMainView('view-edit');
+    renderMembers(); renderLogins(); renderLogs(); renderNotifications(); renderCriticalErrors();
+  } else {
+    document.getElementById('gate-error').style.display = 'block';
+  }
+});
+
+document.querySelectorAll('.subtab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.subtab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    ['members','logins','logs','notif','critical'].forEach(k=>{
+      document.getElementById('etab-'+k).style.display = (k===t.dataset.etab) ? 'block' : 'none';
+    });
+  });
+});
+
+const ROLES = ['Yönetici','Admin','Designer','Üye'];
+function renderMembers(){
+  const wrap = document.getElementById('etab-members');
+  let html = '<table class="data-table"><tr><th>Ad Soyad</th><th>Kullanıcı adı</th><th>E-posta</th><th>Telefon</th><th>Rol</th><th></th></tr>';
+  users.forEach((u,i)=>{
+    html += `<tr>
+      <td>${(u.name||'')+' '+(u.surname||'')}</td>
+      <td>${u.username||'—'}</td>
+      <td>${u.email||'—'}</td>
+      <td>${u.phone||'—'}</td>
+      <td><select data-idx="${i}" class="role-select">${ROLES.map(r=>`<option ${r===u.role?'selected':''}>${r}</option>`).join('')}</select></td>
+      <td><button class="btn-danger" data-del="${i}">Üyeliği Sil</button></td>
+    </tr>`;
+  });
+  html += '</table>';
+  html += '<p style="color:var(--text-muted); font-size:12px; margin-top:12px;">Not: "Üyeliği Sil" bu kişinin uygulama profilini kaldırır; Firebase Authentication hesabı tamamen silmek için Firebase konsolundan manuel silme gerekir.</p>';
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('.role-select').forEach(sel=>{
+    sel.addEventListener('change', async ()=>{
+      const idx = +sel.dataset.idx;
+      const old = users[idx].role;
+      users[idx].role = sel.value;
+      await setDoc(doc(db,'users',users[idx].uid), { ...users[idx] });
+      await logActivity('role_change', `${users[idx].username||users[idx].email}: ${old} → ${sel.value}`);
+      if(currentUser.uid === users[idx].uid){ currentUser.role = sel.value; document.getElementById('role-badge').textContent = sel.value; document.getElementById('btn-edit').style.display = sel.value==='Yönetici'?'flex':'none'; }
+    });
+  });
+  wrap.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const idx = +btn.dataset.del;
+      const target = users[idx];
+      if(!confirm((target.username||target.email) + ' profilini silmek istediğinize emin misiniz?')) return;
+      await deleteDoc(doc(db,'users',target.uid));
+      users.splice(idx,1);
+      await logActivity('user_delete', `${target.username||target.email} profili silindi`);
+      renderMembers();
+    });
+  });
+}
+function renderLogins(){
+  const wrap = document.getElementById('etab-logins');
+  const loginEvents = activityLog.filter(l => l.type === 'login');
+  let html = '<table class="data-table"><tr><th>Tarih/Saat</th><th>Hesap</th><th>Detay</th></tr>';
+  loginEvents.forEach(l=>{ html += `<tr><td>${l.at}</td><td>${l.user}</td><td>${l.detail}</td></tr>`; });
+  html += '</table>';
+  wrap.innerHTML = loginEvents.length ? html : '<p style="color:var(--text-muted);">Henüz giriş kaydı yok.</p>';
+}
+function renderLogs(){
+  const wrap = document.getElementById('etab-logs');
+  let html = '<table class="data-table"><tr><th>Tarih/Saat</th><th>Kullanıcı</th><th>Tür</th><th>Detay</th></tr>';
+  activityLog.forEach(l=>{ html += `<tr><td>${l.at}</td><td>${l.user}</td><td>${l.type}</td><td>${l.detail}</td></tr>`; });
+  html += '</table>';
+  wrap.innerHTML = html || '<p style="color:var(--text-muted);">Henüz log yok.</p>';
+}
+function renderNotifications(){
+  const wrap = document.getElementById('etab-notif');
+  let html = '<p style="color:var(--text-muted); font-size:12.5px; margin-bottom:14px;">Not: gerçek e-posta gönderimi ayrı bir servis (örn. Resend/SendGrid) bağlanmadan çalışmaz; şimdilik her kayıt burada listeleniyor.</p>';
+  html += '<table class="data-table"><tr><th>Tarih/Saat</th><th>Ad Soyad</th><th>Kullanıcı adı</th><th>E-posta</th></tr>';
+  notifications.forEach(n=>{ html += `<tr><td>${n.at}</td><td>${n.name} ${n.surname}</td><td>${n.username}</td><td>${n.email}</td></tr>`; });
+  html += '</table>';
+  wrap.innerHTML = html;
+}
+
+function renderCriticalErrors(){
+  const wrap = document.getElementById('etab-critical');
+  let html = '<p style="color:var(--text-muted); font-size:12.5px; margin-bottom:14px;">"Critical" (Opus 5) botunun Analist (Sonnet 5) cevabında tespit edip düzelttiği hatalar. Bu liste her yeni işlemde otomatik olarak kontrol edilip aynı hatanın tekrarlanması önlenir.</p>';
+  html += '<table class="data-table"><tr><th>Tarih/Saat</th><th>Tür</th><th>Kullanıcı</th><th>Tespit Edilen Hata</th></tr>';
+  criticalErrors.forEach(e=>{ html += `<tr><td>${e.at}</td><td>${e.source}</td><td>${e.user}</td><td>${e.hata}</td></tr>`; });
+  html += '</table>';
+  wrap.innerHTML = criticalErrors.length ? html : '<p style="color:var(--text-muted);">Henüz kayıtlı bir Critical düzeltmesi yok.</p>';
+}
+
+/* ============ CLIENT LIST ============ */
+function isYonetici(){ return currentUser && currentUser.role === 'Yönetici'; }
+
+function renderClients(){
+  document.getElementById('open-add-client').style.display = isYonetici() ? 'inline-block' : 'none';
+  const wrap = document.getElementById('client-list');
+  wrap.innerHTML = '';
+  const grouped = {};
+  clients.forEach((c,i) => { c._idx = i; if(!grouped[c.client]) grouped[c.client] = []; grouped[c.client].push(c); });
+  document.getElementById('client-sub').textContent = clients.length + ' açık pozisyon · ' + Object.keys(grouped).length + ' client';
+
+  Object.keys(grouped).forEach((clientName, gi) => {
+    const group = document.createElement('div');
+    group.className = 'client-group';
+    const head = document.createElement('div');
+    head.className = 'client-group-head';
+    head.innerHTML = `<div class="name">${clientName}</div><div style="display:flex;align-items:center;gap:10px;"><span class="count">${grouped[clientName].length} pozisyon</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>`;
+    head.addEventListener('click', ()=> group.classList.toggle('open'));
+    group.appendChild(head);
+
+    const positions = document.createElement('div');
+    positions.className = 'positions';
+    grouped[clientName].forEach((p, idx) => {
+      const row = document.createElement('div');
+      row.className = 'position-row';
+      const detailId = 'detail-' + gi + '-' + idx;
+      row.innerHTML = `
+        <div class="title">${p.title}</div>
+        <div class="loc">${p.loc}</div>
+        <div class="pay">${p.pay}</div>
+        <button class="expand-btn" data-target="${detailId}">detay</button>
+        ${isYonetici() ? `<button class="btn-danger" data-remove="${p._idx}">Sil</button>` : '<span></span>'}
+      `;
+      positions.appendChild(row);
+      const detail = document.createElement('div');
+      detail.className = 'position-detail';
+      detail.id = detailId;
+      detail.innerHTML = `<strong>Saatler:</strong> ${p.hours}<br><strong>Notlar:</strong> ${p.notes}`;
+      positions.appendChild(detail);
+      row.querySelector('.expand-btn').addEventListener('click', (e)=>{ e.stopPropagation(); detail.classList.toggle('open'); });
+      const rm = row.querySelector('[data-remove]');
+      if(rm){
+        rm.addEventListener('click', async (e)=>{
+          e.stopPropagation();
+          const i = +rm.dataset.remove;
+          const removed = clients[i];
+          if(!confirm(`${removed.client} — ${removed.title} silinsin mi?`)) return;
+          clients.splice(i,1);
+          await saveList('clients', clients);
+          await logActivity('client_delete', `${removed.client} — ${removed.title}`);
+          renderClients();
+        });
+      }
+    });
+    group.appendChild(positions);
+    wrap.appendChild(group);
+  });
+}
+
+const backdrop = document.getElementById('modal-backdrop');
+document.getElementById('open-add-client').addEventListener('click', ()=> backdrop.classList.add('open'));
+document.getElementById('m-cancel').addEventListener('click', ()=> backdrop.classList.remove('open'));
+document.getElementById('m-save').addEventListener('click', async ()=>{
+  if(!isYonetici()) return;
+  const clientName = document.getElementById('m-client').value.trim();
+  const title = document.getElementById('m-title').value.trim();
+  if(!clientName || !title) return;
+  const entry = {
+    client: clientName, title: title,
+    loc: document.getElementById('m-loc').value.trim() || 'belirtilmemiş',
+    hours: document.getElementById('m-hours').value.trim() || 'belirtilmemiş',
+    pay: document.getElementById('m-pay').value.trim() || 'belirtilmemiş',
+    notes: document.getElementById('m-notes').value.trim() || '—'
+  };
+  clients.push(entry);
+  await saveList('clients', clients);
+  await logActivity('client_add', `${clientName} — ${title}`);
+  renderClients();
+  ['m-client','m-title','m-loc','m-hours','m-pay','m-notes'].forEach(id => document.getElementById(id).value = '');
+  backdrop.classList.remove('open');
+});
+
+/* ============ SOSYAL MEDYA PAYLAŞIM YARDIMCISI ============ */
+let socialSelectedClient = null;
+const DEFAULT_ACCOMMODATION = 'Kalacak yer imkanı sağlanmaktadır.';
+const DEFAULT_TRANSPORT = 'Ulaşım için araç veya ulaşım desteği sağlanacaktır.';
+
+function socialShowStep(step){
+  document.getElementById('social-step-start').style.display = step==='start' ? 'block' : 'none';
+  document.getElementById('social-step-pick').style.display = step==='pick' ? 'block' : 'none';
+  document.getElementById('social-result').style.display = step==='result' ? 'block' : 'none';
+  document.getElementById('social-error').style.display = 'none';
+}
+
+function renderSocialClientPicker(){
+  const box = document.getElementById('social-client-picker');
+  box.innerHTML = '';
+  clients.forEach((c,i)=>{
+    const row = document.createElement('div');
+    row.className = 'client-picker-item';
+    row.innerHTML = `<div class="cp-client">${c.client}</div><div class="cp-title">${c.title} — ${c.loc}</div>`;
+    row.addEventListener('click', ()=> generateSocialPost(c));
+    box.appendChild(row);
+  });
+}
+
+document.getElementById('social-cta-btn').addEventListener('click', ()=>{
+  renderSocialClientPicker();
+  socialShowStep('pick');
+});
+document.getElementById('social-back-1').addEventListener('click', ()=> socialShowStep('start'));
+document.getElementById('social-new').addEventListener('click', ()=> socialShowStep('start'));
+
+function socialMarkdownToHtml(md){
+  let html = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^\- (.*$)/gim, '&bull; $1')
+    .replace(/\n/g, '<br>');
+  return '<div class="social-report-body">' + html + '</div>';
+}
+
+const BOLD_MAP = {};
+(function(){
+  const upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ', lower='abcdefghijklmnopqrstuvwxyz', digits='0123456789';
+  const boldUpperStart = 0x1D400, boldLowerStart = 0x1D41A, boldDigitStart = 0x1D7CE;
+  for(let i=0;i<26;i++){ BOLD_MAP[upper[i]] = String.fromCodePoint(boldUpperStart+i); BOLD_MAP[lower[i]] = String.fromCodePoint(boldLowerStart+i); }
+  for(let i=0;i<10;i++){ BOLD_MAP[digits[i]] = String.fromCodePoint(boldDigitStart+i); }
+})();
+function toUnicodeBold(text){
+  return text.split('').map(ch => BOLD_MAP[ch] || ch).join('');
+}
+function markdownToFacebookText(md){
+  return md.replace(/\*\*(.*?)\*\*/g, (m,inner) => toUnicodeBold(inner));
+}
+
+let lastGeneratedRaw = '';
+
+function estimateMonthlyFromHourly(payStr, hoursStr){
+  if(!payStr || !/saat/i.test(payStr)) return null;
+  let weeklyHours = 40;
+  const rangeMatch = (hoursStr||'').match(/(\d{2,3})\s*-\s*(\d{2,3})\s*h\s*\/\s*hafta/i);
+  const singleMatch = (hoursStr||'').match(/(\d{2,3})\s*h\s*\/\s*hafta/i);
+  if(rangeMatch){ weeklyHours = (parseInt(rangeMatch[1]) + parseInt(rangeMatch[2])) / 2; }
+  else if(singleMatch){ weeklyHours = parseInt(singleMatch[1]); }
+  const monthlyHours = weeklyHours * 4;
+  const nums = [...payStr.matchAll(/€\s?(\d{1,3}),(\d{2})/g)].map(m => parseFloat(m[1]+'.'+m[2]));
+  if(!nums.length) return null;
+  const monthlyVals = nums.map(n => Math.round(n * monthlyHours));
+  const fmt = (n) => '€' + n.toLocaleString('nl-NL');
+  const text = monthlyVals.length === 1
+    ? `${fmt(monthlyVals[0])} brüt/ay (haftalık ${weeklyHours} saat üzerinden ortalama)`
+    : `${fmt(Math.min(...monthlyVals))}–${fmt(Math.max(...monthlyVals))} brüt/ay (haftalık ${weeklyHours} saat üzerinden ortalama)`;
+  return { weeklyHours, monthlyHours, text };
+}
+
+async function generateSocialPost(client){
+  if(isSpamming('generate-social-post', 3000)) return;
+  socialSelectedClient = client;
+  socialShowStep('pick');
+  document.getElementById('social-analyzing').style.display = 'flex';
+  document.getElementById('social-error').style.display = 'none';
+  try{
+    const monthlyEstimate = estimateMonthlyFromHourly(client.pay, client.hours);
+    const salaryInfo = monthlyEstimate ? `${client.pay} (~${monthlyEstimate.text})` : client.pay;
+    const payload = {
+      client: client.client,
+      title: client.title,
+      loc: client.loc,
+      hours: client.hours,
+      pay: client.pay,
+      notes: client.notes,
+      salaryInfo,
+      accommodationInfo: DEFAULT_ACCOMMODATION,
+      transportInfo: DEFAULT_TRANSPORT,
+      knownErrors: getKnownErrorsFor('social_post')
+    };
+    const response = await fetch('/api/generate-post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if(!response.ok) throw new Error(data.error || 'Sunucu hatası');
+    if(!data.text) throw new Error('Boş yanıt döndü.');
+    lastGeneratedRaw = data.text;
+    document.getElementById('social-report').innerHTML = socialMarkdownToHtml(data.text);
+    await logActivity('social_post', `${socialSelectedClient.client} — ${socialSelectedClient.title} için ilan metni oluşturuldu`);
+    if(data.pipeline && data.pipeline.errorFound){
+      await recordCriticalError('social_post', data.pipeline.errorDescription);
+    }
+    renderFbGroupPicker();
+    socialShowStep('result');
+  }catch(e){
+    console.error(e);
+    const box = document.getElementById('social-error');
+    box.textContent = 'Metin oluşturulurken hata oluştu: ' + e.message;
+    box.style.display = 'block';
+  }finally{
+    document.getElementById('social-analyzing').style.display = 'none';
+  }
+}
+
+document.getElementById('social-copy').addEventListener('click', async ()=>{
+  const fbText = markdownToFacebookText(lastGeneratedRaw);
+  try{
+    await navigator.clipboard.writeText(fbText);
+    const btn = document.getElementById('social-copy');
+    const old = btn.textContent;
+    btn.textContent = 'Kopyalandı ✓';
+    setTimeout(()=> btn.textContent = old, 1800);
+  }catch(e){
+    alert('Kopyalama başarısız oldu, metni elle seçip kopyalayabilirsin.');
+  }
+});
+
+/* ============ FACEBOOK GRUPLARI ============ */
+async function saveFbGroups(){ await saveList('fbGroups', fbGroups); }
+
+function renderFbGroupPicker(){
+  document.getElementById('open-add-group').style.display = isYonetici() ? 'inline-block' : 'none';
+  document.getElementById('open-fb-logs').style.display = isYonetici() ? 'inline-block' : 'none';
+  const box = document.getElementById('fb-group-picker');
+  box.innerHTML = '';
+  if(!fbGroups.length){
+    box.innerHTML = `<div style="padding:16px; font-size:12.5px; color:var(--text-muted);">Henüz kayıtlı Facebook grubu yok. ${isYonetici() ? '"+ Grup Ekle" ile ekleyebilirsin.' : ''}</div>`;
+    return;
+  }
+  const parseMembers = (m) => {
+    if(!m) return -1;
+    const n = parseFloat(String(m).replace(/[.,]/g,'').replace(/[^\d]/g,''));
+    return isNaN(n) ? -1 : n;
+  };
+  const sorted = fbGroups.map((g,i)=>({...g, _idx:i})).sort((a,b)=> parseMembers(b.members) - parseMembers(a.members));
+  sorted.forEach((g)=>{
+    const row = document.createElement('div');
+    row.className = 'client-picker-item';
+    row.style.display = 'flex';
+    row.style.flexDirection = 'column';
+    row.style.gap = '8px';
+    const metaBits = [];
+    if(g.members) metaBits.push(`👤 ${g.members} üye`);
+    if(g.activity) metaBits.push(g.activity);
+    const meta = metaBits.length ? metaBits.join(' &middot; ') : g.url;
+
+    const statusMap = g.approvalStatus || {};
+    const statusBadges = Object.keys(statusMap).map(uname=>{
+      const st = statusMap[uname];
+      const displayName = (userDisplayNames[uname] || uname);
+      return st === 'approved'
+        ? `<span class="status-badge approved" title="${displayName}: Onaylandı">✅ ${displayName}</span>`
+        : `<span class="status-badge pending" title="${displayName}: Onay Aşamasında">⏳ ${displayName}</span>`;
+    }).join(' ');
+
+    row.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input type="checkbox" class="fb-group-check" data-idx="${g._idx}" style="width:15px; height:15px; accent-color:var(--gold); flex:0 0 auto;">
+        <div style="flex:1;">
+          <div class="cp-client">${g.name}</div>
+          <div class="cp-title">${meta}</div>
+        </div>
+        <button class="btn-secondary" style="font-size:12px; padding:6px 10px;" data-statusgroup="${g._idx}">Durum Belirt</button>
+        ${isYonetici() ? `<button class="btn-secondary" style="font-size:12px; padding:6px 10px;" data-editgroup="${g._idx}">Düzenle</button>` : ''}
+        ${isYonetici() ? `<button class="btn-danger" data-delgroup="${g._idx}">Sil</button>` : ''}
+      </div>
+      ${statusBadges ? `<div style="padding-left:25px; display:flex; flex-wrap:wrap; gap:6px;">${statusBadges}</div>` : ''}
+    `;
+    box.appendChild(row);
+  });
+  box.querySelectorAll('[data-statusgroup]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      await openApprovalModal(+btn.dataset.statusgroup);
+    });
+  });
+  box.querySelectorAll('[data-editgroup]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openGroupModal(+btn.dataset.editgroup);
+    });
+  });
+  box.querySelectorAll('[data-delgroup]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const i = +btn.dataset.delgroup;
+      const removed = fbGroups[i];
+      if(!confirm(`"${removed.name}" grubu listeden silinsin mi?`)) return;
+      fbGroups.splice(i,1);
+      await saveFbGroups();
+      await logActivity('fb_group_delete', `${removed.name} silindi`);
+      renderFbGroupPicker();
+    });
+  });
+}
+
+/* ============ KULLANICI BAZLI ONAY DURUMU ============ */
+let allUsersCache = null;
+let userDisplayNames = {};
+async function ensureUsersCache(){
+  if(!allUsersCache){
+    allUsersCache = await loadAllUsers();
+    userDisplayNames = {};
+    allUsersCache.forEach(u=>{
+      const key = u.username || u.email;
+      userDisplayNames[key] = (u.name ? (u.name+' '+(u.surname||'')).trim() : (u.username||u.email));
+    });
+  }
+  return allUsersCache;
+}
+
+let approvalModalGroupIdx = null;
+const approvalBackdrop = document.getElementById('approval-modal-backdrop');
+
+async function openApprovalModal(idx){
+  approvalModalGroupIdx = idx;
+  const g = fbGroups[idx];
+  document.getElementById('approval-modal-group-name').textContent = g.name;
+  const users = await ensureUsersCache();
+  const sel = document.getElementById('approval-user-select');
+  sel.innerHTML = users.map(u=>{
+    const key = u.username || u.email;
+    return `<option value="${key}">${userDisplayNames[key]}</option>`;
+  }).join('');
+  const myKey = currentUser ? (currentUser.username || currentUser.email) : null;
+  if(myKey && [...sel.options].some(o=>o.value===myKey)){ sel.value = myKey; }
+  approvalBackdrop.classList.add('open');
+}
+
+async function setApprovalStatus(status){
+  if(approvalModalGroupIdx === null) return;
+  const uname = document.getElementById('approval-user-select').value;
+  const g = fbGroups[approvalModalGroupIdx];
+  if(!g.approvalStatus) g.approvalStatus = {};
+  if(status === null){ delete g.approvalStatus[uname]; }
+  else { g.approvalStatus[uname] = status; }
+  await saveFbGroups();
+  await logActivity('fb_group_status', `${g.name} — ${userDisplayNames[uname]||uname}: ${status === 'approved' ? 'Onaylandı' : status === 'pending' ? 'Onay Aşamasında' : 'durum temizlendi'}`);
+  renderFbGroupPicker();
+  approvalBackdrop.classList.remove('open');
+}
+
+document.getElementById('approval-cancel').addEventListener('click', ()=> approvalBackdrop.classList.remove('open'));
+document.getElementById('approval-set-approved').addEventListener('click', ()=> setApprovalStatus('approved'));
+document.getElementById('approval-set-pending').addEventListener('click', ()=> setApprovalStatus('pending'));
+document.getElementById('approval-clear').addEventListener('click', ()=> setApprovalStatus(null));
+
+let editingGroupIdx = null;
+const groupBackdrop = document.getElementById('group-modal-backdrop');
+
+function openGroupModal(idx){
+  editingGroupIdx = (idx === undefined || idx === null) ? null : idx;
+  const isEdit = editingGroupIdx !== null;
+  document.getElementById('group-modal-title').textContent = isEdit ? 'Facebook Grubunu Düzenle' : 'Facebook Grubu Ekle';
+  const g = isEdit ? fbGroups[editingGroupIdx] : { name:'', url:'', members:'', activity:'' };
+  document.getElementById('g-name').value = g.name || '';
+  document.getElementById('g-url').value = g.url || '';
+  document.getElementById('g-members').value = g.members || '';
+  document.getElementById('g-activity').value = g.activity || '';
+  groupBackdrop.classList.add('open');
+}
+
+document.getElementById('open-add-group').addEventListener('click', ()=> openGroupModal(null));
+document.getElementById('g-cancel').addEventListener('click', ()=> groupBackdrop.classList.remove('open'));
+document.getElementById('g-save').addEventListener('click', async ()=>{
+  if(!isYonetici()) return;
+  const name = document.getElementById('g-name').value.trim();
+  const url = document.getElementById('g-url').value.trim();
+  const members = document.getElementById('g-members').value.trim();
+  const activity = document.getElementById('g-activity').value.trim();
+  if(!name || !url){ return; }
+  if(!/^https?:\/\//i.test(url)){ alert('Lütfen geçerli bir link girin (https:// ile başlamalı).'); return; }
+  if(editingGroupIdx !== null){
+    const existing = fbGroups[editingGroupIdx];
+    fbGroups[editingGroupIdx] = { ...existing, name, url, members, activity };
+    await saveFbGroups();
+    await logActivity('fb_group_edit', name);
+  } else {
+    fbGroups.push({name,url,members,activity,pendingApproval:false});
+    await saveFbGroups();
+    await logActivity('fb_group_add', name);
+  }
+  renderFbGroupPicker();
+  document.getElementById('g-name').value = '';
+  document.getElementById('g-url').value = '';
+  document.getElementById('g-members').value = '';
+  document.getElementById('g-activity').value = '';
+  editingGroupIdx = null;
+  groupBackdrop.classList.remove('open');
+});
+
+/* ============ FB PAYLAŞIM LOGLARI (sadece Yönetici) ============ */
+let shareLogs = [];
+async function saveShareLogs(){ await saveList('shareLogs', shareLogs); }
+
+function logMonthKey(entry){
+  if(entry.atISO) return entry.atISO.slice(0,7); // "YYYY-MM"
+  // eski kayıtlar için tr-TR toLocaleString formatını ("d.m.yyyy, hh:mm:ss") ayrıştırmayı dene
+  const m = (entry.at||'').match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if(m) return `${m[3]}-${String(m[2]).padStart(2,'0')}`;
+  return 'bilinmiyor';
+}
+function monthLabel(key){
+  if(key === 'bilinmiyor') return 'Tarih bilinmiyor';
+  const [y,m] = key.split('-');
+  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  return `${aylar[parseInt(m)-1]} ${y}`;
+}
+
+function renderFbLogsPanel(selectedMonth){
+  const panel = document.getElementById('fb-logs-panel');
+  if(!shareLogs.length){
+    panel.innerHTML = '<div class="panel-card" style="max-width:none;"><h3 style="margin-top:0; font-size:16px;">Paylaşım Logları</h3><p style="color:var(--text-muted); font-size:12.5px;">Henüz paylaşım kaydı yok.</p></div>';
+    return;
+  }
+  const months = [...new Set(shareLogs.map(logMonthKey))].sort().reverse();
+  const month = selectedMonth || months[0];
+  const monthEntries = shareLogs.filter(e => logMonthKey(e) === month);
+
+  // kullanıcı > grup > adet
+  const byUser = {};
+  monthEntries.forEach(e=>{
+    if(!byUser[e.user]) byUser[e.user] = { total:0, groups:{} };
+    byUser[e.user].total++;
+    byUser[e.user].groups[e.groupName] = (byUser[e.user].groups[e.groupName]||0) + 1;
+  });
+
+  let html = '<div class="panel-card" style="max-width:none;">';
+  html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">';
+  html += '<h3 style="margin:0; font-size:16px;">Paylaşım Logları — ' + monthLabel(month) + '</h3>';
+  html += '<div style="display:flex; gap:8px; align-items:center;">';
+  html += '<select id="fb-log-month-select" style="background:rgba(5,4,3,.6); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-family:\'Space Grotesk\',sans-serif; font-size:12.5px;">';
+  months.forEach(m => { html += `<option value="${m}" ${m===month?'selected':''}>${monthLabel(m)}</option>`; });
+  html += '</select>';
+  html += '<button class="btn btn-ghost" id="fb-log-download" style="font-size:12px; padding:8px 12px;">İndir (CSV)</button>';
+  html += '<button class="btn-danger" id="fb-log-reset" style="font-size:12px; padding:8px 12px;">Sayaçları Sıfırla</button>';
+  html += '</div></div>';
+
+  const userNames = Object.keys(byUser).sort((a,b)=> byUser[b].total - byUser[a].total);
+  if(!userNames.length){
+    html += '<p style="color:var(--text-muted); font-size:12.5px;">Bu ay için kayıt yok.</p>';
+  } else {
+    userNames.forEach(u=>{
+      const info = byUser[u];
+      html += `<div style="margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--line);">`;
+      html += `<div style="font-size:14px; color:var(--gold-bright); font-weight:600; margin-bottom:6px;">${u} — toplam ${info.total} gönderi</div>`;
+      html += '<table class="data-table"><tr><th>Facebook Grubu</th><th>Gönderi Sayısı</th></tr>';
+      Object.keys(info.groups).sort((a,b)=> info.groups[b]-info.groups[a]).forEach(gName=>{
+        html += `<tr><td>${gName}</td><td>${info.groups[gName]}</td></tr>`;
+      });
+      html += '</table></div>';
+    });
+  }
+  html += '<p style="color:var(--text-muted); font-size:11.5px; margin-top:10px;">Veriler otomatik olarak ~1 yıl boyunca saklanır. Geçmiş ayları karşılaştırmak için yukarıdaki aydan seçim yap veya "İndir" ile tüm geçmişi CSV olarak dışa aktar.</p>';
+  html += '</div>';
+  panel.innerHTML = html;
+
+  document.getElementById('fb-log-month-select').addEventListener('change', (e)=>{
+    renderFbLogsPanel(e.target.value);
+  });
+  document.getElementById('fb-log-download').addEventListener('click', downloadShareLogsCsv);
+  document.getElementById('fb-log-reset').addEventListener('click', async ()=>{
+    if(!confirm('Tüm paylaşım sayaçları ve geçmişi sıfırlanacak. Önce "İndir (CSV)" ile bir yedek almanı öneririm. Devam etmek istediğine emin misin?')) return;
+    await downloadShareLogsCsv();
+    shareLogs = [];
+    await saveShareLogs();
+    await logActivity('fb_log_reset', 'Paylaşım logları sıfırlandı, sayım bugünden itibaren yeniden başladı');
+    renderFbLogsPanel();
+  });
+}
+
+function downloadShareLogsCsv(){
+  const header = 'Kullanici,Facebook Grubu,Pozisyon,Firma,Tarih';
+  const rows = shareLogs.map(e => [e.user, e.groupName, e.jobTitle, e.company, e.at]
+    .map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','));
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `carriere-paylasim-loglari-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('open-fb-logs').addEventListener('click', ()=>{
+  const panel = document.getElementById('fb-logs-panel');
+  const isOpen = panel.style.display !== 'none';
+  if(isOpen){ panel.style.display = 'none'; return; }
+  renderFbLogsPanel();
+  panel.style.display = 'block';
+});
+
+
+document.getElementById('fb-share-btn').addEventListener('click', async ()=>{
+  const errBox = document.getElementById('fb-share-error');
+  errBox.style.display = 'none';
+  if(isSpamming('fb-share', 2500)) return;
+  const checked = Array.from(document.querySelectorAll('.fb-group-check:checked'));
+  if(!checked.length){
+    errBox.textContent = 'Lütfen en az bir Facebook grubu seç.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  // Pencereleri HEMEN, senkron şekilde aç — tarayıcı pop-up engelleyicisi
+  // sadece tıklamayla doğrudan (araya await girmeden) açılan pencerelere izin verir.
+  const selectedGroups = checked.map(cb => fbGroups[+cb.dataset.idx]);
+  const blocked = [];
+  selectedGroups.forEach(g => {
+    const win = window.open(g.url, '_blank');
+    if(!win){ blocked.push(g); }
+  });
+
+  const fbText = markdownToFacebookText(lastGeneratedRaw);
+  try{ await navigator.clipboard.writeText(fbText); }catch(e){}
+
+  await logActivity('fb_share', `${socialSelectedClient ? socialSelectedClient.client+' — '+socialSelectedClient.title : ''} metni ${selectedGroups.length} grup için kopyalandı ve sekmeler açıldı (${selectedGroups.map(g=>g.name).join(', ')})`);
+
+  const shareUser = currentUser ? (currentUser.name ? (currentUser.name+' '+(currentUser.surname||'')) : (currentUser.username||currentUser.email)) : '—';
+  const nowAt = nowStr();
+  const nowIso = new Date().toISOString();
+  selectedGroups.forEach(g=>{
+    shareLogs.unshift({
+      user: shareUser,
+      groupName: g.name,
+      jobTitle: socialSelectedClient ? socialSelectedClient.title : '—',
+      company: socialSelectedClient ? socialSelectedClient.client : '—',
+      at: nowAt,
+      atISO: nowIso
+    });
+  });
+  shareLogs = shareLogs.slice(0, 8000); // ~1 yıllık veri için geniş kapasite
+  await saveShareLogs();
+
+  const btn = document.getElementById('fb-share-btn');
+  const old = btn.textContent;
+  if(blocked.length){
+    errBox.innerHTML = `Metin kopyalandı, ancak tarayıcın ${blocked.length} pencereyi pop-up engelleyici yüzünden açamadı (${blocked.map(g=>g.name).join(', ')}). Adres çubuğunun sağındaki pop-up engelleyici simgesine tıklayıp bu site için pop-up'lara izin ver, sonra tekrar dene.`;
+    errBox.style.display = 'block';
+    btn.textContent = 'Metin kopyalandı, bazı sekmeler engellendi';
+  } else {
+    btn.textContent = 'Metin kopyalandı, sekmeler açıldı ✓';
+  }
+  setTimeout(()=> btn.textContent = old, 2600);
+});
+
+/* ============ CV ANALYSIS (kendi serverless fonksiyonumuz üzerinden) ============ */
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+dropzone.addEventListener('click', ()=> fileInput.click());
+dropzone.addEventListener('dragover', e=>{ e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', ()=> dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e=>{ e.preventDefault(); dropzone.classList.remove('drag'); if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e=>{ if(e.target.files.length) handleFile(e.target.files[0]); });
+
+/* --- Mod seçim kutucukları (Kural 3 & Kural 4) --- */
+const modeScan = document.getElementById('mode-scan');
+const modeSpecific = document.getElementById('mode-specific');
+const pickerWrap = document.getElementById('client-picker-wrap');
+const pickerBox = document.getElementById('client-picker');
+let selectedClientIdx = null;
+
+function renderClientPicker(){
+  pickerBox.innerHTML = '';
+  clients.forEach((c,i)=>{
+    const row = document.createElement('div');
+    row.className = 'client-picker-item' + (selectedClientIdx===i ? ' selected' : '');
+    row.innerHTML = `<div class="cp-client">${c.client}</div><div class="cp-title">${c.title} — ${c.loc}</div>`;
+    row.addEventListener('click', ()=>{
+      selectedClientIdx = i;
+      renderClientPicker();
+    });
+    pickerBox.appendChild(row);
+  });
+}
+
+modeScan.addEventListener('change', ()=>{
+  if(modeScan.checked){ modeSpecific.checked = false; pickerWrap.style.display = 'none'; }
+});
+modeSpecific.addEventListener('change', ()=>{
+  if(modeSpecific.checked){
+    modeScan.checked = false;
+    pickerWrap.style.display = 'block';
+    selectedClientIdx = null;
+    renderClientPicker();
+  } else {
+    pickerWrap.style.display = 'none';
+  }
+});
+
+function fileToBase64(file){
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(r.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+function fileToArrayBuffer(file){
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(r.result);
+    r.onerror = reject;
+    r.readAsArrayBuffer(file);
+  });
+}
+async function extractDocxText(file){
+  const buf = await fileToArrayBuffer(file);
+  const result = await mammoth.extractRawText({ arrayBuffer: buf });
+  return result.value;
+}
+async function extractPptxText(file){
+  const buf = await fileToArrayBuffer(file);
+  const zip = await JSZip.loadAsync(buf);
+  const slideFiles = Object.keys(zip.files)
+    .filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+    .sort((a,b)=> {
+      const na = parseInt(a.match(/slide(\d+)\.xml/)[1]);
+      const nb = parseInt(b.match(/slide(\d+)\.xml/)[1]);
+      return na - nb;
+    });
+  let text = '';
+  for(const name of slideFiles){
+    const xml = await zip.files[name].async('text');
+    const matches = xml.match(/<a:t>([^<]*)<\/a:t>/g) || [];
+    const slideText = matches.map(m => m.replace(/<a:t>|<\/a:t>/g,'')).join(' ');
+    text += slideText + '\n';
+  }
+  return text;
+}
+function detectKind(file){
+  const name = file.name.toLowerCase();
+  if(name.endsWith('.pdf') || file.type === 'application/pdf') return 'pdf';
+  if(name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'docx';
+  if(name.endsWith('.pptx') || file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') return 'pptx';
+  if(name.endsWith('.doc') || name.endsWith('.ppt')) return 'legacy';
+  return 'unsupported';
+}
+
+const FORMAT_RULE = `BİÇİM KURALI: Kısa ve öz yaz, gereksiz uzatma. Markdown TABLO kullanma (| işaretli satırlar yasak). "- " ile başlayan madde işaretli listeler kullan, önemli terimleri **kalın** yaz. Tüm çıktı TÜRKÇE. CV'de belirtilmeyen bilgi için "CV'de belirtilmemiş" yaz, tahmin yürütme.`;
+const CONTACT_RULE = `Her cevabın en başında ## İletişim Bilgileri başlığı altında CV'den bulduğun e-posta, telefon ve adres bilgilerini madde madde ver.`;
+
+function buildSpecificPrompt(c){
+  const target = `${c.client} — ${c.title} (${c.loc}) — ${c.hours} — ${c.pay} — ${c.notes}`;
+  return `Sen Carriere işe alım ajansında çalışan bir recruitment asistanısın. Ekli CV'yi analiz et.
+${FORMAT_RULE}
+${CONTACT_RULE}
+Değerlendirilecek TEK pozisyon:
+${target}
+Cevabında:
+## Bu Pozisyona Uygun mu?
+Net bir şekilde "Uygun" ya da "Uygun Değil" de.
+## Gerekçe
+Pozisyonun aradığı somut gereksinimleri (sertifika, tecrübe alanı, dil, ehliyet vb.) tek tek CV'deki karşılıklarıyla kıyasla:
+- Adayda VAR olan ve pozisyonun istediğiyle örtüşen somut şeyleri isim vererek belirt (hangi sertifika/deneyim/dil, neden client'ın istediğiyle örtüşüyor).
+- Adayda EKSİK olan noktaları da isim vererek belirt.
+- Bir eksiklik varsa, client'ın notlarında bu şart için esneklik/istisna belirtilip belirtilmediğini kontrol et (örn. "deneyim şart değil", "eğitim veriliyor" gibi ifadeler) — belirtilmişse bunun eksikliği ne ölçüde telafi ettiğini söyle, belirtilmemişse eksikliğin ciddiyetini vurgula.
+- Adayın deneyimi farklı bir meslek/sektörden geliyorsa bunu açıkça söyle ve pozisyonla ne kadar örtüştüğünü/örtüşmediğini değerlendir.
+Kısa ve öz tut, madde başına 1-2 cümle, gereksiz uzatma.`;
+}
+
+function buildPrompt(mode){
+  const clientText = clients.map((c,i)=> `${i+1}. ${c.client} — ${c.title} (${c.loc}) — ${c.hours} — ${c.pay} — ${c.notes}`).join('\n');
+
+  if(mode === 'scan'){
+    // Kural 3 (genişletilmiş): tüm clientları tara, %70+ uyumlu OLANLARIN HEPSİNİ göster.
+    // En yüksek puanlıya detaylı artı/eksi analizi, diğerlerine kısa gerekçe.
+    // Çıktı, arayüzün ayrıştırabilmesi için SADECE geçerli JSON olmalı.
+    return `Sen Carriere işe alım ajansında çalışan bir recruitment asistanısın. Ekli CV'yi analiz et.
+${CONTACT_RULE}
+CV'de belirtilmeyen bilgi için uydurma yapma, "belirtilmemiş" kabul et.
+Açık pozisyon listesi:
+${clientText}
+
+GÖREV: Tüm listeyi tara. Adayın %70 ve üzeri uyumlu olduğu pozisyonları bul (bir tane bile bulamazsan en yüksek puanlı 1 tanesini yine de dahil et). En yüksek puanlıyı "topMatch" yap, geri kalanları puana göre azalan sırayla "otherOptions" dizisine koy. "otherOptions" dizisinde EN FAZLA 5 seçenek olsun (en yüksek puanlı ilk 5'i al, gerisini atla) — cevabın kesilmeden tamamlanabilmesi için bu sınıra kesinlikle uy.
+
+ÇIKTI KURALI: Cevabın SADECE aşağıdaki şemaya uyan geçerli bir JSON nesnesi olsun. Markdown, açıklama, kod bloğu işareti (\`\`\`) YOK — sadece ham JSON metni:
+{
+  "contactInfo": { "email": "<CV'den bulduğun e-posta veya 'CV'de belirtilmemiş'>", "phone": "<...>", "address": "<...>" },
+  "topMatch": {
+    "client": "<client adı>",
+    "title": "<pozisyon adı>",
+    "score": <0-100 arası tam sayı>,
+    "whySuitable": "<sertifika/tecrübe/dil/ehliyet gibi somut sebeplerle açıklama, EN FAZLA 4 cümle>",
+    "whyRisky": "<varsa eksik/riskli noktaların açıklaması, EN FAZLA 4 cümle; hiç risk yoksa 'Belirgin bir risk görünmüyor.' yaz>"
+  },
+  "otherOptions": [
+    { "client": "<client adı>", "title": "<pozisyon adı>", "score": <sayı>, "shortReason": "<EN FAZLA 2 cümlelik kısa gerekçe>" }
+  ]
+}
+ÖNEMLİ: Yanıtın kesinlikle tam ve geçerli JSON olarak bitmeli (son parantez dahil). Uzun açıklamalar yerine kısa ve öz cümleler kullan ki yanıt yarıda kesilmesin. Sadece bu JSON'u döndür, başka hiçbir metin ekleme.`;
+  }
+
+  if(mode === 'specific'){
+    // Kural 4: sadece seçilen tek pozisyona karşı direkt uygunluk kontrolü, detaylı gerekçeli
+    return buildSpecificPrompt(clients[selectedClientIdx]);
+  }
+
+  // Kural 3: tüm clientları tara, en iyi eşleşmeyi artı/eksileriyle ve puanla göster
+  return `Sen Carriere işe alım ajansında çalışan bir recruitment asistanısın. Ekli CV'yi analiz et.
+${FORMAT_RULE}
+${CONTACT_RULE}
+Açık pozisyon listesi:
+${clientText}
+Tüm listeyi tara ve adayın EN UYGUN olduğu tek pozisyonu seç. Cevabında:
+## En Uygun Client
+Hangi client ve pozisyon olduğunu yaz.
+## Neden Uygun
+Sertifika, tecrübe, dil, ehliyet gibi somut sebeplerle kısaca açıkla (artıları).
+## Eksikler / Dikkat Edilmesi Gerekenler
+Varsa eksik/riskli noktaları kısaca listele.
+## Uygunluk Puanı
+%100 üzerinden tek bir puan ver.`;
+}
+
+function simpleMarkdownToHtml(md){
+  let html = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^\- (.*$)/gim, '<li>$1</li>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+  html = html.replace(/(<li>.*?<\/li>)/gs, m => '<ul>' + m + '</ul>').replace(/<\/ul>\s*<ul>/g, '');
+  return '<p>' + html + '</p>';
+}
+
+/* ============ YÜKLEME SAHNESİ: UZAY GEMİSİ + ASTRONOT ============ */
+let loadingRAF = null;
+let loadingProgress = 0;
+let loadingActive = false;
+let loadingMsgTimer = null;
+let dustPopulated = false;
+
+function populateDust(){
+  if(dustPopulated) return;
+  dustPopulated = true;
+  const g = document.getElementById('bg-dust');
+  let html = '';
+  for(let i=0;i<50;i++){
+    const x = Math.random()*800, y = Math.random()*500, r = Math.random()*1.4+0.3;
+    const gold = Math.random()<0.4;
+    html += `<circle cx="${x}" cy="${y}" r="${r}" fill="${gold?'#f5d9a0':'#fff8e6'}" opacity="${0.25+Math.random()*0.5}"/>`;
+  }
+  g.innerHTML = html;
+}
+
+function shipAirlockWorld(){ return {x:442, y:216}; }
+function astroAnchorWorld(ax,ay){ return {x:ax+20, y:ay+18}; }
+
+function updateLoadingVisual(p){
+  const startX=140, startY=360, endX=462, endY=226;
+  const ep = 1 - Math.pow(1-p, 2);
+  const bob = Math.sin(p*14) * (10*(1-p));
+  const ax = startX + (endX-startX)*ep;
+  const ay = startY + (endY-startY)*ep + bob;
+  const rot = -8 + 14*p;
+  const astro = document.getElementById('astro-group');
+  if(astro) astro.setAttribute('transform', `translate(${ax},${ay}) rotate(${rot})`);
+
+  const anchor = astroAnchorWorld(ax,ay);
+  const dock = shipAirlockWorld();
+  const dx = dock.x-anchor.x, dy = dock.y-anchor.y;
+  const dist = Math.hypot(dx,dy);
+  const midx = (anchor.x+dock.x)/2, midy = (anchor.y+dock.y)/2;
+  const sag = Math.min(60, dist*0.35) * (1-p*0.7);
+  const nx = -dy/Math.max(1,dist), ny = dx/Math.max(1,dist);
+  const ctrlX = midx + nx*sag, ctrlY = midy + ny*sag + sag*0.4;
+  const tether = document.getElementById('tether');
+  if(tether) tether.setAttribute('d', `M ${anchor.x},${anchor.y} Q ${ctrlX},${ctrlY} ${dock.x},${dock.y}`);
+
+  const bar = document.getElementById('loading-bar-fill');
+  if(bar) bar.style.width = (p*100)+'%';
+}
+
+const LOADING_MESSAGES = [
+  'Aday, geminin veri bankasına aktarılıyor…',
+  'Sertifikalar ve deneyimler taranıyor…',
+  'Client gereksinimleriyle karşılaştırılıyor…',
+  'Uygunluk hesaplanıyor…',
+  'Rapor hazırlanıyor…'
+];
+
+function startLoadingScene(){
+  populateDust();
+  const scene = document.getElementById('loading-scene');
+  scene.classList.add('visible');
+  requestAnimationFrame(()=> scene.classList.add('show'));
+  loadingActive = true;
+  loadingProgress = 0;
+  updateLoadingVisual(0);
+  let msgIdx = 0;
+  document.getElementById('loading-sub').textContent = LOADING_MESSAGES[0];
+  clearInterval(loadingMsgTimer);
+  loadingMsgTimer = setInterval(()=>{
+    msgIdx = (msgIdx+1) % LOADING_MESSAGES.length;
+    document.getElementById('loading-sub').textContent = LOADING_MESSAGES[msgIdx];
+  }, 2200);
+  function loop(){
+    if(!loadingActive) return;
+    loadingProgress += (0.9 - loadingProgress) * 0.012;
+    updateLoadingVisual(Math.min(0.9, loadingProgress));
+    loadingRAF = requestAnimationFrame(loop);
+  }
+  loadingRAF = requestAnimationFrame(loop);
+}
+
+function finishLoadingScene(){
+  return new Promise((resolve)=>{
+    loadingActive = false;
+    if(loadingRAF) cancelAnimationFrame(loadingRAF);
+    clearInterval(loadingMsgTimer);
+    document.getElementById('loading-sub').textContent = 'Astronot gemiye ulaştı, veriler indiriliyor…';
+    const startP = loadingProgress;
+    const t0 = performance.now();
+    const DUR = 700;
+    function snap(now){
+      const t = Math.min(1, (now-t0)/DUR);
+      const p = startP + (1-startP)*t;
+      updateLoadingVisual(p);
+      if(t<1){ requestAnimationFrame(snap); }
+      else {
+        setTimeout(()=>{
+          const scene = document.getElementById('loading-scene');
+          scene.classList.remove('show');
+          setTimeout(()=>{ scene.classList.remove('visible'); resolve(); }, 500);
+        }, 350);
+      }
+    }
+    requestAnimationFrame(snap);
+  });
+}
+let lastCvContent = null; // { fileBase64 } veya { cvText } - Risk Değerlendirmesi için tekrar kullanılır
+
+async function handleFile(file){
+  if(isSpamming('cv-analyze', 3000)) return;
+  const kind = detectKind(file);
+  if(kind === 'unsupported'){ showError('Desteklenmeyen dosya türü. PDF, .docx veya .pptx yükleyin.'); return; }
+  if(kind === 'legacy'){ showError('Eski .doc / .ppt formatları desteklenmiyor. Lütfen .docx / .pptx veya PDF olarak kaydedip tekrar deneyin.'); return; }
+  const mode = modeScan.checked ? 'scan' : (modeSpecific.checked ? 'specific' : null);
+  if(!mode){
+    showError('Lütfen önce yukarıdaki iki seçenekten birini işaretleyin.');
+    return;
+  }
+  if(mode === 'specific' && selectedClientIdx === null){
+    showError('Lütfen önce yukarıdaki listeden bir pozisyon seçin.');
+    return;
+  }
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('report').style.display = 'none';
+  startLoadingScene();
+  try{
+    let payload;
+    const knownErrors = getKnownErrorsFor('cv_analysis');
+    if(kind === 'pdf'){
+      const base64 = await fileToBase64(file);
+      payload = { fileBase64: base64, prompt: buildPrompt(mode), knownErrors };
+      lastCvContent = { fileBase64: base64 };
+    } else {
+      const extracted = kind === 'docx' ? await extractDocxText(file) : await extractPptxText(file);
+      if(!extracted || !extracted.trim()) throw new Error('Dosyadan metin çıkarılamadı, dosya boş olabilir.');
+      payload = { cvText: extracted, prompt: buildPrompt(mode), knownErrors };
+      lastCvContent = { cvText: extracted };
+    }
+    const fetchPromise = fetch("/api/analyze-cv", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const response = await fetchPromise;
+    const data = await response.json();
+    if(!response.ok) throw new Error(data.error || 'Sunucu hatası');
+    const text = data.text;
+    if(!text) throw new Error('Boş yanıt döndü.');
+    await finishLoadingScene();
+
+    if(mode === 'scan'){
+      renderScanResult(text);
+    } else {
+      document.getElementById('report').innerHTML = simpleMarkdownToHtml(text);
+      document.getElementById('report').style.display = 'block';
+    }
+
+    await logActivity('cv_upload', `${file.name} yüklendi (${mode}) ve analiz edildi`);
+    if(data.pipeline && data.pipeline.errorFound){
+      await recordCriticalError('cv_analysis', data.pipeline.errorDescription);
+    }
+  }catch(e){
+    console.error(e);
+    await finishLoadingScene();
+    showError('Analiz sırasında bir hata oluştu: ' + e.message);
+  }finally{
+    fileInput.value = '';
+  }
+}
+
+function scoreColor(score){
+  if(score >= 85) return 'var(--ok)';
+  if(score >= 70) return 'var(--gold-bright)';
+  return 'var(--danger)';
+}
+
+function renderScanResult(rawText){
+  const box = document.getElementById('report');
+  let data;
+  try{
+    const cleaned = rawText.trim().replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'');
+    data = JSON.parse(cleaned);
+  }catch(e){
+    console.error('JSON parse hatası', e, rawText);
+    showError('Sonuç işlenirken bir biçim hatası oluştu (yanıt yarıda kesilmiş olabilir). Lütfen "Best matching client" ile CV\'yi tekrar yükleyip deneyin.');
+    box.style.display = 'none';
+    return;
+  }
+
+  const c = data.contactInfo || {};
+  let html = `<h2>İletişim Bilgileri</h2><ul>
+    <li><strong>E-posta:</strong> ${c.email || 'CV\'de belirtilmemiş'}</li>
+    <li><strong>Telefon:</strong> ${c.phone || 'CV\'de belirtilmemiş'}</li>
+    <li><strong>Adres:</strong> ${c.address || 'CV\'de belirtilmemiş'}</li>
+  </ul>`;
+
+  if(data.topMatch){
+    const t = data.topMatch;
+    html += `<div class="match-card top-match">
+      <div class="match-card-head">
+        <span class="match-rank">🥇 En Uygun Seçenek</span>
+        <span class="match-score" style="color:${scoreColor(t.score)};">%${t.score}</span>
+      </div>
+      <div class="match-title">${t.client} — ${t.title}</div>
+      <div class="match-section"><strong>✅ Neden Uygun</strong><p>${t.whySuitable || ''}</p></div>
+      <div class="match-section"><strong>⚠️ Neden Riskli / Dikkat Edilmesi Gerekenler</strong><p>${t.whyRisky || ''}</p></div>
+    </div>`;
+  }
+
+  if(data.otherOptions && data.otherOptions.length){
+    html += `<h2 style="margin-top:28px;">Diğer Uygun Seçenekler (%70 ve üzeri)</h2>`;
+    data.otherOptions.forEach((o, i)=>{
+      html += `<div class="match-card">
+        <div class="match-card-head">
+          <span class="match-rank">Seçenek ${i+2}</span>
+          <span class="match-score" style="color:${scoreColor(o.score)};">%${o.score}</span>
+        </div>
+        <div class="match-title">${o.client} — ${o.title}</div>
+        <p class="match-short-reason">${o.shortReason || ''}</p>
+        <button class="btn btn-ghost risk-btn" data-riskclient="${encodeURIComponent(o.client)}" data-risktitle="${encodeURIComponent(o.title)}" data-riskidx="${i}">Risk Değerlendirmesi</button>
+        <div class="risk-detail" id="risk-detail-${i}" style="display:none;"></div>
+      </div>`;
+    });
+  }
+
+  box.innerHTML = html;
+  box.style.display = 'block';
+
+  box.querySelectorAll('.risk-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> loadRiskDetail(btn));
+  });
+}
+
+async function loadRiskDetail(btn){
+  const idx = btn.dataset.riskidx;
+  const clientName = decodeURIComponent(btn.dataset.riskclient);
+  const titleName = decodeURIComponent(btn.dataset.risktitle);
+  const detailBox = document.getElementById('risk-detail-'+idx);
+
+  if(detailBox.style.display !== 'none'){ detailBox.style.display = 'none'; return; }
+  if(detailBox.dataset.loaded === '1'){ detailBox.style.display = 'block'; return; }
+  if(!lastCvContent){ detailBox.innerHTML = '<p style="color:var(--danger);">CV içeriği artık hafızada değil, lütfen CV\'yi tekrar yükleyin.</p>'; detailBox.style.display = 'block'; return; }
+
+  const targetClient = clients.find(c => c.client === clientName && c.title === titleName);
+  if(!targetClient){ detailBox.innerHTML = '<p style="color:var(--danger);">Pozisyon bulunamadı.</p>'; detailBox.style.display = 'block'; return; }
+
+  detailBox.style.display = 'block';
+  detailBox.innerHTML = '<div style="display:flex; align-items:center; gap:10px; color:var(--gold-bright); font-size:12.5px; padding:10px 0;"><div class="spinner"></div> Detaylı değerlendirme hazırlanıyor…</div>';
+  btn.disabled = true;
+
+  try{
+    const payload = { ...lastCvContent, prompt: buildSpecificPrompt(targetClient), knownErrors: getKnownErrorsFor('cv_analysis') };
+    const response = await fetch('/api/analyze-cv', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if(!response.ok) throw new Error(data.error || 'Sunucu hatası');
+    if(!data.text) throw new Error('Boş yanıt döndü.');
+    detailBox.innerHTML = simpleMarkdownToHtml(data.text);
+    detailBox.dataset.loaded = '1';
+    if(data.pipeline && data.pipeline.errorFound){
+      await recordCriticalError('cv_analysis', data.pipeline.errorDescription);
+    }
+  }catch(e){
+    detailBox.innerHTML = `<p style="color:var(--danger);">Hata: ${e.message}</p>`;
+  }finally{
+    btn.disabled = false;
+  }
+}
+function showError(msg){ const box = document.getElementById('error-box'); box.textContent = msg; box.style.display = 'block'; }
+
+
+/* ============ GÜN SONU RAPORU ============ */
+function todayStr(){ return new Date().toLocaleDateString('tr-TR'); }
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+document.getElementById('eod-date').value = todayStr();
+
+document.getElementById('eod-save').addEventListener('click', async ()=>{
+  const dateVal = document.getElementById('eod-date').value.trim() || todayStr();
+  const textVal = document.getElementById('eod-text').value.trim();
+  if(!textVal) return;
+  eodReports.unshift({ date: dateVal, text: textVal, at: nowStr(), user: currentUser ? (currentUser.username||currentUser.email) : '—' });
+  await saveList('eodReports', eodReports);
+  document.getElementById('eod-text').value = '';
+  document.getElementById('eod-date').value = todayStr();
+  const ok = document.getElementById('eod-ok');
+  ok.style.display = 'block';
+  setTimeout(()=> ok.style.display='none', 2000);
+  renderEodList();
+  await logActivity('eod_report', `Gün sonu raporu kaydedildi (${dateVal})`);
+});
+
+function renderEodList(){
+  const wrap = document.getElementById('eod-list');
+  if(!wrap) return;
+  const qRaw = document.getElementById('eod-search').value || '';
+  const q = qRaw.trim().toLocaleLowerCase('tr-TR');
+  const filtered = q ? eodReports.filter(r => (r.text||'').toLocaleLowerCase('tr-TR').includes(q) || (r.date||'').toLocaleLowerCase('tr-TR').includes(q)) : eodReports;
+  if(!filtered.length){
+    wrap.innerHTML = '<p style="color:var(--text-muted); font-size:13.5px;">Kayıt bulunamadı.</p>';
+    return;
+  }
+  wrap.innerHTML = filtered.map(r => `
+    <div class="panel-card" style="max-width:100%; margin-bottom:12px; padding:18px 22px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <strong style="color:var(--gold-bright); font-size:14px;">${escapeHtml(r.date || '')}</strong>
+        <span style="color:var(--text-muted); font-size:11.5px;">${escapeHtml(r.user || '')}</span>
+      </div>
+      <div style="white-space:pre-wrap; font-size:13.5px; line-height:1.6;">${escapeHtml(r.text||'')}</div>
+    </div>
+  `).join('');
+}
+document.getElementById('eod-search').addEventListener('input', renderEodList);
+
+/* ============ CHAT WIDGET ============ */
+const chatToggle = document.getElementById('chat-toggle');
+const chatPanel = document.getElementById('chat-panel');
+const chatBadge = document.getElementById('chat-badge');
+let chatPollTimer = null;
+let lastSeenChatCount = 0;
+chatToggle.addEventListener('click', ()=>{
+  chatPanel.classList.toggle('open');
+  if(chatPanel.classList.contains('open')){
+    chatBadge.style.display = 'none';
+    renderChat();
+    lastSeenChatCount = chatMessages.length;
+    chatPollTimer = setInterval(async ()=>{ chatMessages = await loadList('chatMessages', chatMessages); lastSeenChatCount = chatMessages.length; renderChat(); }, 4000);
+  } else {
+    clearInterval(chatPollTimer);
+  }
+});
+setInterval(async ()=>{
+  if(!currentUser || chatPanel.classList.contains('open')) return;
+  const fresh = await loadList('chatMessages', chatMessages);
+  if(fresh.length > lastSeenChatCount){
+    chatMessages = fresh;
+    chatBadge.style.display = 'block';
+  }
+}, 9000);
+function renderChat(){
+  const wrap = document.getElementById('chat-messages');
+  wrap.innerHTML = '';
+  chatMessages.forEach(m=>{
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    div.innerHTML = `<span class="who">${m.name}</span>${m.message}<span class="when">${m.at}</span>`;
+    wrap.appendChild(div);
+  });
+  wrap.scrollTop = wrap.scrollHeight;
+}
+async function sendChat(){
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if(!msg || !currentUser) return;
+  if(isSpamming('chat-send', 1000)) return;
+  const displayName = currentUser.name ? (currentUser.name+' '+(currentUser.surname||'')) : (currentUser.username||currentUser.email);
+  chatMessages.push({ name: displayName, message: msg, at: nowStr() });
+  await saveList('chatMessages', chatMessages);
+  input.value = '';
+  renderChat();
+}
+document.getElementById('chat-send').addEventListener('click', sendChat);
+document.getElementById('chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
+</script>
+</body>
+</html>
