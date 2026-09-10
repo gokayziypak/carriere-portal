@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Gün Sonu Rapor Defteri — Carriere Portal</title>
+<style>
+  :root{
+    --paper: #EDE7D9;
+    --paper-dark: #E2DAC8;
+    --ink: #22201B;
+    --ink-soft: #59544A;
+    --line: #C9BFA6;
+    --accent: #3B6E71;
+    --accent-soft: #DDE9E7;
+    --danger: #9B4B3B;
+    --mark: #F0D77B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family: 'Iowan Old Style','Georgia',serif;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:900px;
+    margin:0 auto;
+    padding:36px 24px 60px;
+  }
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  h1{
+    font-size:28px;
+    font-weight:600;
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  .sub{
+    font-family: -apple-system, 'Inter', sans-serif;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .top-actions{
+    font-family:-apple-system,'Inter',sans-serif;
+    font-size:12.5px;
+    display:flex;
+    gap:14px;
+    align-items:center;
+  }
+  .top-actions a, .top-actions button.link-btn{
+    color:var(--accent);
+    text-decoration:none;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:inherit;
+    padding:0;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: 260px 1fr;
+    gap:28px;
+  }
+  @media (max-width:680px){
+    .grid{grid-template-columns:1fr;}
+  }
+  .panel{
+    background:var(--paper-dark);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:18px;
+  }
+  .panel h2{
+    font-family:-apple-system,'Inter',sans-serif;
+    font-size:12px;
+    text-transform:none;
+    color:var(--ink-soft);
+    margin:0 0 12px 0;
+    font-weight:600;
+  }
+  .search-box{ margin-bottom:16px; }
+  .search-box input[type=text]{
+    width:100%;
+    font-family:-apple-system,'Inter',sans-serif;
+    font-size:13.5px;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .search-box input[type=text]:focus{ outline:none; border-color:var(--accent); }
+  .search-info{
+    font-family:-apple-system,'Inter',sans-serif;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+  .date-list{ list-style:none; margin:0; padding:0; max-height:460px; overflow-y:auto; }
+  .date-list li{
+    padding:9px 8px;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+    font-family:-apple-system,'Inter',sans-serif;
+    font-size:13.5px;
+  }
+  .date-list li .row{ display:flex; justify-content:space-between; align-items:center; }
+  .date-list li .snippet{
+    display:block; margin-top:4px; font-size:11.5px; color:var(--ink-soft);
+    line-height:1.4; white-space:normal;
+  }
+  .date-list li .snippet mark{ background:var(--mark); color:var(--ink); padding:0 1px; border-radius:2px; }
+  .date-list li:hover{ background:var(--accent-soft); }
+  .date-list li.active{ background:var(--accent); color:#fff; }
+  .date-list li.active .snippet{ color:#f2f2f2; }
+  .date-list .empty{
+    font-family:-apple-system,'Inter',sans-serif; font-size:13px; color:var(--ink-soft); padding:8px;
+  }
+  .entry-panel{ background:#fff; border:1px solid var(--line); border-radius:2px; padding:24px; }
+  .date-row{ display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  label{ font-family:-apple-system,'Inter',sans-serif; font-size:12.5px; color:var(--ink-soft); }
+  input[type=date]{
+    font-family:-apple-system,'Inter',sans-serif; font-size:14px; padding:7px 9px;
+    border:1px solid var(--line); border-radius:3px; background:var(--paper); color:var(--ink);
+  }
+  textarea{
+    width:100%; min-height:260px; border:1px solid var(--line); border-radius:3px; padding:14px;
+    font-family: 'Iowan Old Style','Georgia',serif; font-size:15.5px; line-height:1.6;
+    resize:vertical; background:var(--paper); color:var(--ink);
+  }
+  .actions{ display:flex; gap:10px; margin-top:14px; align-items:center; flex-wrap:wrap; }
+  button{
+    font-family:-apple-system,'Inter',sans-serif; font-size:13.5px; font-weight:600;
+    padding:9px 16px; border-radius:3px; border:none; cursor:pointer;
+  }
+  .save-btn{ background:var(--accent); color:#fff; }
+  .save-btn:hover{ background:#325d5f; }
+  .delete-btn{ background:transparent; color:var(--danger); border:1px solid var(--danger); }
+  .delete-btn:hover{ background:#F4E6E2; }
+  .status{ font-family:-apple-system,'Inter',sans-serif; font-size:12.5px; color:var(--ink-soft); }
+  .status.saved{ color:var(--accent); }
+
+  /* Login ekranı */
+  #loginScreen{
+    max-width:360px; margin:80px auto; background:#fff; border:1px solid var(--line);
+    border-radius:3px; padding:28px; font-family:-apple-system,'Inter',sans-serif;
+  }
+  #loginScreen h2{ font-family:'Iowan Old Style','Georgia',serif; font-size:20px; margin:0 0 18px 0; }
+  #loginScreen input{
+    width:100%; padding:9px 10px; margin-bottom:10px; border:1px solid var(--line);
+    border-radius:3px; font-size:13.5px; font-family:inherit;
+  }
+  #loginScreen button{ width:100%; background:var(--accent); color:#fff; }
+  #loginError{ color:var(--danger); font-size:12.5px; margin-top:8px; min-height:16px; }
+  #appRoot{ display:none; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <h2>Giriş Yap</h2>
+  <input type="email" id="loginEmail" placeholder="E-posta">
+  <input type="password" id="loginPassword" placeholder="Şifre">
+  <button id="loginBtn">Giriş Yap</button>
+  <div id="loginError"></div>
+</div>
+
+<div id="appRoot" class="wrap">
+  <header>
+    <div>
+      <h1>Gün Sonu Rapor Defteri</h1>
+      <div class="sub" id="todayLabel"></div>
+    </div>
+    <div class="top-actions">
+      <a href="/index.html">← Panele Dön</a>
+      <button class="link-btn" id="logoutBtn">Çıkış Yap</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Ara</h2>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="İsim, pozisyon, anahtar kelime...">
+        <div class="search-info" id="searchInfo"></div>
+      </div>
+
+      <h2>Kayıtlı Günler</h2>
+      <ul class="date-list" id="dateList"></ul>
+    </div>
+
+    <div class="entry-panel">
+      <div class="date-row">
+        <label for="dateInput">Tarih</label>
+        <input type="date" id="dateInput">
+        <span class="status" id="status"></span>
+      </div>
+
+      <textarea id="entryText" placeholder="Bugün ne yaptığını kısaca yaz... (kaydetmek için aşağıdaki butona bas)"></textarea>
+
+      <div class="actions">
+        <button class="save-btn" id="saveBtn">Kaydet</button>
+        <button class="delete-btn" id="deleteBtn">Bu Kaydı Sil</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+// Carriere Portal Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyCeNkoex2kXFk6U1z4kAVD3sT9W76myIzQ",
+  authDomain: "carriere-portal.firebaseapp.com",
+  projectId: "carriere-portal",
+  storageBucket: "carriere-portal.firebasestorage.app",
+  messagingSenderId: "750706023484",
+  appId: "1:750706023484:web:ddba50fe5e4c77c0a5b739"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const REPORTS_COLLECTION = "gunSonuRaporlari";
+
+// ---------- Giriş / Oturum ----------
+const loginScreen = document.getElementById('loginScreen');
+const appRoot = document.getElementById('appRoot');
+const loginEmail = document.getElementById('loginEmail');
+const loginPassword = document.getElementById('loginPassword');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
+const logoutBtn = document.getElementById('logoutBtn');
+
+await setPersistence(auth, browserLocalPersistence);
+
+loginBtn.addEventListener('click', async () => {
+  loginError.textContent = '';
+  try{
+    await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPassword.value);
+  }catch(e){
+    loginError.textContent = 'Giriş başarısız: e-posta veya şifre hatalı.';
+  }
+});
+
+logoutBtn.addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, (user) => {
+  if(user){
+    loginScreen.style.display = 'none';
+    appRoot.style.display = 'block';
+    init();
+  } else {
+    loginScreen.style.display = 'block';
+    appRoot.style.display = 'none';
+  }
+});
+
+// ---------- Rapor Defteri ----------
+const dateInput = document.getElementById('dateInput');
+const entryText = document.getElementById('entryText');
+const saveBtn = document.getElementById('saveBtn');
+const deleteBtn = document.getElementById('deleteBtn');
+const statusEl = document.getElementById('status');
+const dateListEl = document.getElementById('dateList');
+const todayLabel = document.getElementById('todayLabel');
+const searchInput = document.getElementById('searchInput');
+const searchInfo = document.getElementById('searchInfo');
+
+let entriesCache = {}; // { "2026-09-10": "rapor metni", ... }
+let initialized = false;
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function formatTR(dateStr){
+  const [y,m,d] = dateStr.split('-');
+  const months = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+}
+
+function escapeHtml(str){
+  return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadEntry(dateStr){
+  statusEl.textContent = 'Yükleniyor...';
+  statusEl.className = 'status';
+  try{
+    const snap = await getDoc(doc(db, REPORTS_COLLECTION, dateStr));
+    if(snap.exists()){
+      const data = snap.data();
+      entryText.value = data.text || '';
+      statusEl.textContent = 'Kayıtlı rapor yüklendi.';
+      statusEl.className = 'status saved';
+    } else {
+      entryText.value = '';
+      statusEl.textContent = 'Bu tarih için henüz kayıt yok.';
+      statusEl.className = 'status';
+    }
+  }catch(e){
+    entryText.value = '';
+    statusEl.textContent = 'Yüklenemedi: ' + e.message;
+    statusEl.className = 'status';
+  }
+}
+
+async function saveEntry(){
+  const dateStr = dateInput.value;
+  if(!dateStr) return;
+  const text = entryText.value.trim();
+  if(!text){
+    statusEl.textContent = 'Boş rapor kaydedilemez.';
+    statusEl.className = 'status';
+    return;
+  }
+  statusEl.textContent = 'Kaydediliyor...';
+  try{
+    await setDoc(doc(db, REPORTS_COLLECTION, dateStr), {
+      date: dateStr,
+      text: text,
+      savedAt: new Date().toISOString()
+    });
+    statusEl.textContent = 'Kaydedildi.';
+    statusEl.className = 'status saved';
+    entriesCache[dateStr] = text;
+    renderList();
+  }catch(e){
+    statusEl.textContent = 'Kaydetme başarısız oldu: ' + e.message;
+    statusEl.className = 'status';
+  }
+}
+
+async function deleteEntry(){
+  const dateStr = dateInput.value;
+  if(!dateStr) return;
+  try{
+    await deleteDoc(doc(db, REPORTS_COLLECTION, dateStr));
+    entryText.value = '';
+    statusEl.textContent = 'Kayıt silindi.';
+    statusEl.className = 'status';
+    delete entriesCache[dateStr];
+    renderList();
+  }catch(e){
+    statusEl.textContent = 'Silinemedi: ' + e.message;
+    statusEl.className = 'status';
+  }
+}
+
+async function loadAllEntries(){
+  entriesCache = {};
+  try{
+    const querySnap = await getDocs(collection(db, REPORTS_COLLECTION));
+    querySnap.forEach(docSnap => {
+      const data = docSnap.data();
+      entriesCache[docSnap.id] = data.text || '';
+    });
+  }catch(e){ /* koleksiyon boş olabilir */ }
+}
+
+function buildSnippet(text, term){
+  const lower = text.toLowerCase();
+  const idx = lower.indexOf(term.toLowerCase());
+  if(idx === -1) return '';
+  const start = Math.max(0, idx - 40);
+  const end = Math.min(text.length, idx + term.length + 60);
+  let snippet = text.slice(start, end).replace(/\s+/g,' ').trim();
+  if(start > 0) snippet = '…' + snippet;
+  if(end < text.length) snippet = snippet + '…';
+  const re = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'ig');
+  return escapeHtml(snippet).replace(re, m => `<mark>${m}</mark>`);
+}
+
+function renderList(){
+  const term = searchInput.value.trim();
+  dateListEl.innerHTML = '';
+
+  let dates = Object.keys(entriesCache);
+  if(term){
+    const lowerTerm = term.toLowerCase();
+    dates = dates.filter(d => entriesCache[d].toLowerCase().includes(lowerTerm));
+  }
+  dates.sort((a,b) => b.localeCompare(a));
+
+  searchInfo.textContent = term ? `${dates.length} sonuç bulundu.` : '';
+
+  if(dates.length === 0){
+    dateListEl.innerHTML = `<li class="empty">${term ? 'Eşleşme bulunamadı.' : 'Henüz kayıt yok.'}</li>`;
+    return;
+  }
+
+  dates.forEach(dateStr => {
+    const li = document.createElement('li');
+    if(dateStr === dateInput.value) li.classList.add('active');
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.textContent = formatTR(dateStr);
+    li.appendChild(row);
+
+    if(term){
+      const snippet = document.createElement('span');
+      snippet.className = 'snippet';
+      snippet.innerHTML = buildSnippet(entriesCache[dateStr], term);
+      li.appendChild(snippet);
+    }
+
+    li.addEventListener('click', () => {
+      dateInput.value = dateStr;
+      loadEntry(dateStr);
+      renderList();
+    });
+    dateListEl.appendChild(li);
+  });
+}
+
+dateInput.addEventListener('change', () => { loadEntry(dateInput.value); renderList(); });
+saveBtn.addEventListener('click', saveEntry);
+deleteBtn.addEventListener('click', deleteEntry);
+searchInput.addEventListener('input', renderList);
+
+async function init(){
+  if(initialized) return;
+  initialized = true;
+  todayLabel.textContent = formatTR(todayStr());
+  dateInput.value = todayStr();
+  await loadAllEntries();
+  await loadEntry(dateInput.value);
+  renderList();
+}
+</script>
+</body>
+</html>
